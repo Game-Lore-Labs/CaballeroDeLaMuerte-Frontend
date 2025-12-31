@@ -1,0 +1,322 @@
+/* ============================================================================
+   Button.css - RPG Button Styles
+   ============================================================================ */
+
+.rpg-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: none;
+}
+
+.rpg-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === Size Variants === */
+.rpg-button--small {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+}
+
+.rpg-button--medium {
+  padding: 0.875rem 1.75rem;
+  font-size: 0.9rem;
+}
+
+.rpg-button--large {
+  padding: 1.25rem 2.5rem;
+  font-size: 1.1rem;
+}
+
+/* === Primary Variant (Parchment/Gold) === */
+.rpg-button--primary {
+  background: linear-gradient(
+    145deg,
+    #d4a574 0%,
+    #c69963 25%,
+    #b8894f 50%,
+    #c69963 75%,
+    #d4a574 100%
+  );
+  color: #2a1f14;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.rpg-button--primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.rpg-button--primary:hover:not(:disabled) {
+  background: linear-gradient(
+    145deg,
+    #e0b584 0%,
+    #d4a574 25%,
+    #c69963 50%,
+    #d4a574 75%,
+    #e0b584 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.rpg-button--primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* === Secondary Variant (Dark) === */
+.rpg-button--secondary {
+  background: linear-gradient(
+    145deg,
+    #3d3024 0%,
+    #2a2018 50%,
+    #1a1410 100%
+  );
+  color: var(--gold-mid);
+  border: 2px solid var(--gold-shadow);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.rpg-button--secondary:hover:not(:disabled) {
+  background: linear-gradient(
+    145deg,
+    #4a3c2e 0%,
+    #3d3024 50%,
+    #2a2018 100%
+  );
+  border-color: var(--gold-mid);
+  box-shadow: 
+    0 6px 16px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+/* === Danger Variant (Red) === */
+.rpg-button--danger {
+  background: linear-gradient(
+    145deg,
+    #8b2020 0%,
+    #6b1818 50%,
+    #4b1010 100%
+  );
+  color: #f5e0e0;
+  border: 2px solid #aa3030;
+  box-shadow: 
+    0 4px 12px rgba(139, 32, 32, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.rpg-button--danger:hover:not(:disabled) {
+  background: linear-gradient(
+    145deg,
+    #9b3030 0%,
+    #8b2020 50%,
+    #6b1818 100%
+  );
+  box-shadow: 
+    0 6px 16px rgba(139, 32, 32, 0.7),
+    0 0 20px rgba(255, 100, 100, 0.3);
+}
+
+/* === Success Variant (Green) === */
+.rpg-button--success {
+  background: linear-gradient(
+    145deg,
+    #3a6a3a 0%,
+    #2a5a2a 50%,
+    #1a4a1a 100%
+  );
+  color: #e0f5e0;
+  border: 2px solid #4a8a4a;
+  box-shadow: 
+    0 4px 12px rgba(46, 139, 87, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.rpg-button--success:hover:not(:disabled) {
+  background: linear-gradient(
+    145deg,
+    #4a7a4a 0%,
+    #3a6a3a 50%,
+    #2a5a2a 100%
+  );
+  box-shadow: 
+    0 6px 16px rgba(46, 139, 87, 0.6),
+    0 0 20px rgba(100, 200, 100, 0.3);
+}
+
+/* === Ghost Variant === */
+.rpg-button--ghost {
+  background: transparent;
+  color: var(--gold-mid);
+  border: 1px solid transparent;
+}
+
+.rpg-button--ghost:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--gold-shadow);
+}
+
+/* === Button Elements === */
+.rpg-button__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rpg-button__icon {
+  font-size: 1.2em;
+}
+
+.rpg-button__text {
+  white-space: nowrap;
+}
+
+/* Corner Decorations */
+.rpg-button__corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid;
+  border-color: inherit;
+  opacity: 0.6;
+  z-index: 1;
+}
+
+.rpg-button__corner--tl {
+  top: 3px;
+  left: 3px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.rpg-button__corner--tr {
+  top: 3px;
+  right: 3px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.rpg-button__corner--bl {
+  bottom: 3px;
+  left: 3px;
+  border-right: none;
+  border-top: none;
+}
+
+.rpg-button__corner--br {
+  bottom: 3px;
+  right: 3px;
+  border-left: none;
+  border-top: none;
+}
+
+.rpg-button--primary .rpg-button__corner {
+  border-color: rgba(42, 31, 20, 0.4);
+}
+
+.rpg-button--secondary .rpg-button__corner,
+.rpg-button--ghost .rpg-button__corner {
+  border-color: var(--gold-shadow);
+}
+
+/* Border Lines */
+.rpg-button__border-top,
+.rpg-button__border-bottom {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+.rpg-button__border-top {
+  top: 0;
+}
+
+.rpg-button__border-bottom {
+  bottom: 0;
+}
+
+/* Shine Effect */
+.rpg-button__shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+  z-index: 1;
+}
+
+.rpg-button:hover:not(:disabled) .rpg-button__shine {
+  left: 100%;
+}
+
+/* Loading Animation */
+.rpg-button__loader {
+  display: flex;
+  gap: 4px;
+}
+
+.rpg-button__loader-dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: buttonLoaderPulse 1s ease-in-out infinite;
+}
+
+.rpg-button__loader-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.rpg-button__loader-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes buttonLoaderPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

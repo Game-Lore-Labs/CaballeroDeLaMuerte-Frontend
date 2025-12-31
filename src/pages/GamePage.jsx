@@ -1,318 +1,247 @@
 // ============================================================================
-// src/pages/GamePage.jsx
+// src/pages/GamePage.jsx - Main Game Page
 // ============================================================================
 
-import React, { useState } from 'react';
-import { useGameState } from '../hooks/useGameState';
-import { useVideoControl } from '../hooks/useVideoControl';
-import VideoBackground from '../components/VideoBackground';
-import MuteButton from '../components/MuteButton';
-import CharacterSheet from '../components/CharacterSheet';
-import NarrativeBox from '../components/NarrativeBox';
-import ChoiceButton from '../components/ChoiceButton';
-import LoadingIndicator from '../components/LoadingIndicator';
-import CharacterCreation from '../components/CharacterCreation';
-import { SkipForward, Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useGame } from '../context/GameContext';
+import { MainLayout } from '../components/layout';
+import { NotificationContainer } from '../components/ui';
+import { AdventurePanel, CombatPanel } from '../components/game';
+import { CharacterSheet, Inventory, CluesPanel, HistoryPanel } from '../components/character';
+import './GamePage.css';
 
+// Loading screen component
+const LoadingScreen = ({ onStart }) => {
+  return (
+    <div className="loading-screen">
+      <div className="loading-screen__bg" />
+      <div className="loading-screen__content">
+        <div className="loading-screen__logo">
+          <span className="logo-icon">⚔️</span>
+          <h1 className="logo-title">El Escudero del Caballero de la Muerte</h1>
+          <p className="logo-subtitle">Una aventura interactiva</p>
+        </div>
+        
+        <div className="loading-screen__ornament">
+          <span>✦</span>
+          <div className="ornament-line" />
+          <span>✦</span>
+        </div>
+        
+        <button className="start-button" onClick={onStart}>
+          <span className="start-button__text">Comenzar Aventura</span>
+          <span className="start-button__icon">→</span>
+        </button>
+        
+        <p className="loading-screen__hint">
+          Basado en las reglas de D&D 5ª Edición
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Error display component
+const ErrorDisplay = ({ error, onRetry }) => {
+  return (
+    <div className="error-display">
+      <div className="error-display__icon">⚠️</div>
+      <h2 className="error-display__title">Error</h2>
+      <p className="error-display__message">{error}</p>
+      <button className="error-display__button" onClick={onRetry}>
+        Reintentar
+      </button>
+    </div>
+  );
+};
+
+// Main GamePage component
 const GamePage = () => {
-  const [showCharSheet, setShowCharSheet] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [activeTab, setActiveTab] = useState('adventure');
+  const [saving, setSaving] = useState(false);
   
   const {
-    gameState,
+    isLoaded,
+    isLoading,
+    error,
     narrative,
     options,
-    isGameOver,
-    loading,
-    error,
-    createCharacter,
-    makeChoice,
-    resetGame,
-  } = useGameState();
+    character,
+    history,
+    currentEntry,
+    inCombat,
+    combatState,
+    lastResult,
+    notifications,
+    loadGame,
+    saveGame,
+    selectOption,
+    attack,
+    processEnemyTurn,
+    finishCombat,
+    removeNotification,
+    clearError,
+  } = useGame();
 
-  // Mapeo de entradas a videos
-  const getVideoForEntry = (entryId) => {
-    const videoMap = {
-      'START': '/clips/scene__1.mp4',
-      'ADVENTUREBEGINS': '/clips/scene__1.mp4',
-      'BREWSKI': '/clips/scene__2.mp4',
-      'KEEPGOING': '/clips/scene__3.mp4',
-      'QUESTCONVO': '/clips/scene__2.mp4',
-      'REPLENISH': '/clips/scene__2.mp4',
-      'FORESTENTRY': '/clips/scene__1.mp4',
-      'CHALLENGE': '/clips/scene__1.mp4',
-      'HIDEAWAY': '/clips/scene__1.mp4',
-      'VICTORY': '/clips/scene__1.mp4',
-      'DEATH': '/clips/scene__3.mp4',
-    };
-    return videoMap[entryId] || '/clips/scene__1.mp4';
-  };
-
-  const currentVideo = gameState 
-    ? getVideoForEntry(gameState.currentEntry)
-    : '/clips/scene__1.mp4';
-
-  const {
-    videoRef,
-    videoEnded,
-    isMuted,
-    videoError,
-    handleVideoEnd,
-    toggleMute,
-    skipVideo,
-  } = useVideoControl(currentVideo);
-
-  const handleCreateCharacter = async (name, charClass) => {
+  // Handle game load
+  const handleStartGame = async () => {
     try {
-      await createCharacter(name, charClass);
+      await loadGame();
     } catch (err) {
-      console.error('Error al crear personaje:', err);
+      console.error('Error loading game:', err);
     }
   };
 
-  const handleChoice = async (choiceIndex) => {
-    setIsTransitioning(true);
-    setVideoPlaying(false);
+  // Handle save game
+  const handleSaveGame = async () => {
+    setSaving(true);
     try {
-      await makeChoice(choiceIndex);
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 800);
+      await saveGame();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle option selection
+  const handleSelectOption = async (optionId) => {
+    try {
+      const result = await selectOption(optionId);
+      
+      // If combat started, switch to combat view automatically
+      if (result.type === 'combat_started') {
+        setActiveTab('adventure'); // Stay on adventure but show combat
+      }
     } catch (err) {
-      console.error('Error al procesar elección:', err);
-      setIsTransitioning(false);
+      console.error('Error selecting option:', err);
     }
   };
 
-  const handleRestart = () => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      resetGame();
-      setIsTransitioning(false);
-      setVideoPlaying(false);
-    }, 800);
-  };
-
-  const handlePlayVideo = () => {
-    if (videoRef.current) {
-      videoRef.current.play()
-        .then(() => {
-          console.log('✅ Video reproducido manualmente');
-          setVideoPlaying(true);
-        })
-        .catch(err => {
-          console.error('❌ Error al reproducir:', err);
-        });
+  // Handle combat attack
+  const handleAttack = async (targetIndex) => {
+    try {
+      const result = await attack(targetIndex);
+      
+      // Process enemy turn after player attack (if not combat over)
+      if (result.type !== 'enemy_defeated' && combatState?.state === 'InProgress') {
+        setTimeout(async () => {
+          await processEnemyTurn();
+        }, 500);
+      }
+      
+      return result;
+    } catch (err) {
+      console.error('Error attacking:', err);
+      throw err;
     }
   };
 
-  // Si no hay gameState, mostrar creación de personaje
-  if (!gameState) {
+  // Handle end combat
+  const handleEndCombat = async () => {
+    try {
+      await finishCombat();
+    } catch (err) {
+      console.error('Error ending combat:', err);
+    }
+  };
+
+  // Render tab content
+  const renderTabContent = () => {
+    // If in combat, always show combat panel
+    if (inCombat) {
+      return (
+        <CombatPanel
+          combatState={combatState}
+          onAttack={handleAttack}
+          onEndCombat={handleEndCombat}
+          loading={isLoading}
+        />
+      );
+    }
+
+    switch (activeTab) {
+      case 'adventure':
+        return (
+          <AdventurePanel
+            narrative={narrative}
+            options={options}
+            character={character}
+            onSelectOption={handleSelectOption}
+            loading={isLoading}
+            lastResult={lastResult}
+          />
+        );
+      
+      case 'character':
+        return <CharacterSheet character={character} />;
+      
+      case 'inventory':
+        return (
+          <Inventory 
+            inventory={character?.inventory || []} 
+            equipment={character?.equipment || []}
+          />
+        );
+      
+      case 'clues':
+        return <CluesPanel clues={character?.clues || []} />;
+      
+      case 'history':
+        return (
+          <HistoryPanel 
+            history={history} 
+            currentEntry={currentEntry}
+          />
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  // Show loading screen if not loaded
+  if (!isLoaded && !error) {
     return (
-      <CharacterCreation
-        onCreateCharacter={handleCreateCharacter}
-        loading={loading}
-        error={error}
-      />
+      <>
+        <LoadingScreen onStart={handleStartGame} />
+        <NotificationContainer 
+          notifications={notifications} 
+          onRemove={removeNotification} 
+        />
+      </>
     );
   }
 
-  const getSceneTitle = () => {
-    const titles = {
-      'START': 'EL ESCUDERO DEL CABALLERO DE LA MUERTE',
-      'ADVENTUREBEGINS': 'LA AVENTURA COMIENZA',
-      'BREWSKI': 'LA TABERNA DEL CAMINO',
-      'KEEPGOING': 'EL CAMINO CONTINÚA',
-      'QUESTCONVO': 'RUMORES DEL CABALLERO',
-      'REPLENISH': 'DESCANSO MERECIDO',
-      'FORESTENTRY': 'EL BOSQUE WEATHERCOTE',
-      'CHALLENGE': 'ENFRENTAMIENTO',
-      'HIDEAWAY': 'SIGILO Y OBSERVACIÓN',
-      'VICTORY': '¡VICTORIA!',
-      'DEATH': 'GAME OVER',
-    };
-    return titles[gameState.currentEntry] || 'AVENTURA';
-  };
+  // Show error if present
+  if (error && !isLoaded) {
+    return (
+      <>
+        <ErrorDisplay error={error} onRetry={handleStartGame} />
+        <NotificationContainer 
+          notifications={notifications} 
+          onRemove={removeNotification} 
+        />
+      </>
+    );
+  }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* Video de fondo */}
-      <VideoBackground
-        videoSrc={currentVideo}
-        videoRef={videoRef}
-        onVideoEnd={handleVideoEnd}
-        isMuted={isMuted}
-      />
-
-      {/* Overlay oscuro */}
-      <div 
-        className={`absolute inset-0 bg-black transition-opacity duration-1000 ${
-          videoEnded ? 'opacity-60' : 'opacity-30'
-        }`}
-        style={{ zIndex: 10 }}
-      />
-
-      {/* Botón de mute */}
-      <MuteButton isMuted={isMuted} onToggle={toggleMute} />
-
-      {/* Botón de Skip Video */}
-      {!videoEnded && (
-        <button
-          onClick={skipVideo}
-          className="absolute top-6 right-20 z-50 bg-black bg-opacity-60 hover:bg-opacity-80 p-3 rounded-full transition-all backdrop-blur-sm border border-amber-700"
-          aria-label="Saltar video"
-        >
-          <SkipForward className="w-6 h-6 text-amber-300" />
-        </button>
-      )}
-
-      {/* Hoja de personaje */}
-      <CharacterSheet
-        character={gameState?.character}
-        isOpen={showCharSheet}
-        onToggle={() => setShowCharSheet(!showCharSheet)}
-      />
-
-      {/* Botón PLAY grande en el centro */}
-      {!videoEnded && !videoPlaying && (
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer"
-          onClick={handlePlayVideo}
-        >
-          <div className="bg-black bg-opacity-80 backdrop-blur-md p-8 rounded-full border-4 border-amber-700 hover:border-amber-500 hover:scale-110 transition-all">
-            <Play className="w-24 h-24 text-amber-300" fill="currentColor" />
-          </div>
-          <p className="text-amber-200 text-xl font-serif text-center mt-4">
-            Click para reproducir
-          </p>
-        </div>
-      )}
-
-      {/* Error de video */}
-      {videoError && (
-        <div 
-          className="absolute top-1/4 left-1/2 transform -translate-x-1/2 z-50"
-        >
-          <div className="bg-red-900 bg-opacity-90 backdrop-blur-md px-8 py-4 rounded-lg border-2 border-red-500">
-            <p className="text-red-200 text-lg font-serif text-center">
-              {videoError}
-            </p>
-            <button
-              onClick={skipVideo}
-              className="mt-4 w-full py-2 bg-red-700 hover:bg-red-600 rounded-lg text-white font-bold transition-all"
-            >
-              Continuar sin video
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Mensaje "Observa la escena..." solo cuando está reproduciendo */}
-      {!videoEnded && videoPlaying && !videoError && (
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse pointer-events-none"
-          style={{ zIndex: 30 }}
-        >
-          <div className="bg-black bg-opacity-70 backdrop-blur-md px-8 py-4 rounded-lg border-2 border-amber-700">
-            <p className="text-amber-200 text-lg font-serif text-center">
-              Observa la escena...
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Contenido principal - solo visible cuando el video termina */}
-      <div 
-        className={`absolute inset-0 flex items-center justify-center p-8 transition-opacity duration-1000 ${
-          videoEnded ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-        style={{ zIndex: 40 }}
+    <>
+      <MainLayout
+        activeTab={inCombat ? 'adventure' : activeTab}
+        onTabChange={setActiveTab}
+        character={character}
+        onSave={handleSaveGame}
+        onLoad={handleStartGame}
+        saving={saving}
       >
-        <div className="max-w-4xl w-full space-y-8">
-          <NarrativeBox
-            title={getSceneTitle()}
-            description={narrative}
-          />
-
-          {/* Mensaje de error */}
-          {error && (
-            <div className="bg-red-900 bg-opacity-70 backdrop-blur-md rounded-lg p-4 border border-red-500">
-              <p className="text-red-200 text-center">{error}</p>
-            </div>
-          )}
-
-          {/* Opciones de elección */}
-          {!isGameOver && (
-            <div className="space-y-4">
-              {options.map((option) => (
-                <ChoiceButton
-                  key={option.optionIndex}
-                  text={option.optionText_}
-                  onClick={() => handleChoice(option.optionIndex)}
-                  disabled={loading || isTransitioning}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Game Over - Opciones de reinicio */}
-          {isGameOver && (
-            <div className="space-y-4">
-              <div className="bg-amber-900 bg-opacity-50 backdrop-blur-md rounded-lg p-6 border-2 border-amber-600 text-center">
-                <p className="text-amber-100 text-xl font-serif mb-4">
-                  {gameState.character.charHP <= 0 
-                    ? '¡Has caído en combate!'
-                    : '¡Aventura completada!'}
-                </p>
-                <div className="grid grid-cols-2 gap-4 text-amber-200 text-sm">
-                  <div>
-                    <p className="font-bold">XP Ganada:</p>
-                    <p>{gameState.character.charXP}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold">Pistas:</p>
-                    <p>{gameState.character.charClues.length}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold">Objetos:</p>
-                    <p>{gameState.character.charInventory.length}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold">Escenas:</p>
-                    <p>{gameState.visitedEntries.length}</p>
-                  </div>
-                </div>
-              </div>
-
-              <ChoiceButton
-                text="Comenzar Nueva Aventura"
-                onClick={handleRestart}
-                disabled={loading}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Indicador de carga */}
-      {loading && (
-        <LoadingIndicator text="Procesando..." />
-      )}
-
-      {/* Indicador "Reproduciendo..." */}
-      {!videoEnded && videoPlaying && !loading && !videoError && (
-        <LoadingIndicator text="Reproduciendo..." />
-      )}
-
-      {/* Transición entre escenas */}
-      <div 
-        className={`absolute inset-0 bg-black transition-opacity duration-800 pointer-events-none ${
-          isTransitioning ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={{ zIndex: 60 }}
+        {renderTabContent()}
+      </MainLayout>
+      
+      <NotificationContainer 
+        notifications={notifications} 
+        onRemove={removeNotification} 
       />
-    </div>
+    </>
   );
 };
 

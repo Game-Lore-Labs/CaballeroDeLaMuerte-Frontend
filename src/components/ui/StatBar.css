@@ -1,0 +1,223 @@
+/* ============================================================================
+   StatBar.css - Stat Bar Styles
+   ============================================================================ */
+
+.stat-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* === Label === */
+.stat-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-bar-label__text {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-mid);
+}
+
+.stat-bar-label__value {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+/* === Size Variants === */
+.stat-bar-wrapper--small .stat-bar {
+  height: 16px;
+}
+
+.stat-bar-wrapper--medium .stat-bar {
+  height: 22px;
+}
+
+.stat-bar-wrapper--large .stat-bar {
+  height: 28px;
+}
+
+/* === Main Bar === */
+.stat-bar {
+  position: relative;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stat-bar__bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #1a1410 0%,
+    #0f0c0a 50%,
+    #1a1410 100%
+  );
+}
+
+/* === Fill Bar === */
+.stat-bar__fill {
+  position: relative;
+  height: 100%;
+  transition: width 0.5s ease;
+  overflow: hidden;
+}
+
+.stat-bar__fill--animated {
+  animation: fillPulse 2s ease-in-out infinite;
+}
+
+@keyframes fillPulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.1);
+  }
+}
+
+/* Health Fill */
+.stat-bar--health .stat-bar__fill {
+  background: linear-gradient(
+    180deg,
+    #4a9a4a 0%,
+    #2a7a2a 40%,
+    #1a6a1a 60%,
+    #0a5a0a 100%
+  );
+}
+
+.stat-bar--health.stat-bar--wounded .stat-bar__fill {
+  background: linear-gradient(
+    180deg,
+    #c9a030 0%,
+    #a98020 40%,
+    #896010 60%,
+    #694000 100%
+  );
+}
+
+.stat-bar--health.stat-bar--critical .stat-bar__fill {
+  background: linear-gradient(
+    180deg,
+    #c94040 0%,
+    #a92020 40%,
+    #891010 60%,
+    #690000 100%
+  );
+  animation: criticalPulse 1s ease-in-out infinite;
+}
+
+@keyframes criticalPulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
+
+/* Mana Fill */
+.stat-bar--mana .stat-bar__fill {
+  background: linear-gradient(
+    180deg,
+    #4a6ac9 0%,
+    #2a4aa9 40%,
+    #1a3a89 60%,
+    #0a2a69 100%
+  );
+}
+
+/* XP Fill */
+.stat-bar--xp .stat-bar__fill {
+  background: linear-gradient(
+    180deg,
+    #9a5ac9 0%,
+    #7a3aa9 40%,
+    #5a2a89 60%,
+    #3a1a69 100%
+  );
+}
+
+/* === Shine Effect === */
+.stat-bar__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 30%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.1) 70%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+}
+
+/* === Segment Lines === */
+.stat-bar__segments {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.stat-bar__segment {
+  flex: 1;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.stat-bar__segment:last-child {
+  border-right: none;
+}
+
+/* === Text Overlay === */
+.stat-bar__text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 
+    1px 1px 2px rgba(0, 0, 0, 0.8),
+    -1px -1px 2px rgba(0, 0, 0, 0.8);
+  z-index: 2;
+}
+
+/* === Frame Border === */
+.stat-bar__frame {
+  position: absolute;
+  inset: 0;
+  border: 2px solid;
+  border-image: linear-gradient(
+    135deg,
+    var(--gold-dark) 0%,
+    var(--gold-shadow) 50%,
+    var(--gold-dark) 100%
+  ) 1;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Small size adjustments */
+.stat-bar-wrapper--small .stat-bar__text {
+  font-size: 0.6rem;
+}
+
+.stat-bar-wrapper--small .stat-bar__frame {
+  border-width: 1px;
+}
+
+.stat-bar-wrapper--large .stat-bar__text {
+  font-size: 0.85rem;
+}

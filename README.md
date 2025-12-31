@@ -1,70 +1,119 @@
-# Getting Started with Create React App
+# RPG Frontend - El Escudero del Caballero de la Muerte
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Frontend para el juego de rol interactivo "El Escudero del Caballero de la Muerte", implementado con React y un diseño visual inspirado en Pathfinder: Wrath of the Righteous.
 
-## Available Scripts
+## 🎮 Características
 
-In the project directory, you can run:
+- **Interfaz RPG clásica** con estilo medieval/pergamino
+- **Navegación por pestañas** en barra superior:
+  - 📖 Aventura - Panel principal de narrativa
+  - 👤 Personaje - Hoja de personaje completa
+  - 🎒 Inventario - Dispensario medieval
+  - 🔍 Pistas - Diario de pistas descubiertas
+  - 📜 Historial - Timeline de la aventura
+- **Sistema de combate** con interfaz visual
+- **Integración completa** con el backend Haskell/Scotty
 
-### `npm start`
+## 🏗️ Arquitectura
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+src/
+├── components/
+│   ├── layout/          # Componentes de estructura (TopNavbar, MainLayout)
+│   ├── ui/              # Componentes reutilizables (Button, Panel, StatBar)
+│   ├── character/       # Componentes de personaje (CharacterSheet, Inventory)
+│   └── game/            # Componentes del juego (AdventurePanel, CombatPanel)
+├── context/             # Context API (GameContext)
+├── hooks/               # Custom hooks
+├── pages/               # Páginas principales (GamePage)
+├── services/            # Servicios API
+├── styles/              # Estilos globales y tema
+└── utils/               # Utilidades y constantes
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🎨 Diseño Visual
 
-### `npm test`
+### Paleta de Colores
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Pergamino**: `#f4e4bc` a `#c4a878` - Para paneles de narrativa
+- **Oro/Dorado**: `#ffd700` a `#7a6420` - Acentos y bordes
+- **Oscuros**: `#1a1410` a `#4a3c2e` - Fondos y paneles
+- **Estados**: Rojo (daño), Verde (salud), Púrpura (arcano)
 
-### `npm run build`
+### Tipografías
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Cinzel** - Títulos y encabezados
+- **Cormorant Garamond** - Texto narrativo
+- **MedievalSharp** - Elementos decorativos
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🚀 Instalación
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+# Clonar el repositorio
+cd rpg-frontend
 
-### `npm run eject`
+# Instalar dependencias
+npm install
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# Iniciar en modo desarrollo
+npm start
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🔧 Configuración
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+El frontend se conecta al backend en `http://localhost:3000`. Para cambiar esto, crea un archivo `.env`:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```env
+REACT_APP_API_URL=http://localhost:3000
+```
 
-## Learn More
+## 📡 API Endpoints Utilizados
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/game/load` | POST | Cargar partida |
+| `/game/save` | POST | Guardar partida |
+| `/game/state` | GET | Obtener estado |
+| `/entry/current` | GET | Entrada actual |
+| `/entry/select` | POST | Seleccionar opción |
+| `/character` | GET | Info de personaje |
+| `/combat/status` | GET | Estado de combate |
+| `/combat/attack` | POST | Atacar enemigo |
+| `/combat/enemy-turn` | POST | Turno enemigos |
+| `/combat/end` | POST | Finalizar combate |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 📂 Estructura de Componentes
 
-### Code Splitting
+### Layout
+- `MainLayout` - Contenedor principal con fondo y navegación
+- `TopNavbar` - Barra de navegación horizontal superior
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### UI
+- `Button` - Botón estilizado con variantes
+- `Panel` - Panel decorativo (dark, parchment, gold)
+- `StatBar` - Barras de estadísticas (vida, maná, XP)
+- `Notification` - Sistema de notificaciones toast
 
-### Analyzing the Bundle Size
+### Character
+- `CharacterSheet` - Hoja de personaje completa con atributos y habilidades
+- `Inventory` - Sistema de inventario tipo dispensario
+- `CluesPanel` - Panel de pistas descubiertas
+- `HistoryPanel` - Timeline de la aventura
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Game
+- `AdventurePanel` - Panel de narrativa y opciones
+- `CombatPanel` - Interfaz de combate
 
-### Making a Progressive Web App
+## 🎲 Mecánicas D&D 5e Soportadas
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- Sistema d20 con bonificadores
+- Atributos (FUE, DES, CON, INT, SAB, CAR)
+- 18 habilidades con competencia/pericia
+- Tiradas de salvación
+- Sistema de combate por turnos
+- Clase de Armadura (CA)
+- Puntos de Vida
 
-### Advanced Configuration
+## 📜 Licencia
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+MIT License - Proyecto educativo MATCOM

@@ -1,0 +1,339 @@
+/* ============================================================================
+   HistoryPanel.css - History Timeline Styles
+   ============================================================================ */
+
+.history-panel {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn 0.5s ease;
+}
+
+/* === Main Panel === */
+.history-panel__main {
+  min-height: 500px;
+}
+
+/* Header */
+.history-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-panel__header-icon {
+  font-size: 1.5rem;
+}
+
+.history-panel__title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold-mid);
+  margin: 0;
+}
+
+/* Statistics */
+.history-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(26, 20, 16, 0.6);
+  border: 1px solid var(--gold-shadow);
+  border-radius: 4px;
+}
+
+.history-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  padding: 0.5rem;
+}
+
+.history-stat__value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold-mid);
+  line-height: 1;
+}
+
+.history-stat__label {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  text-align: center;
+}
+
+/* Divider */
+.history-panel__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--gold-mid);
+}
+
+.history-panel__divider::before,
+.history-panel__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--gold-shadow) 50%,
+    transparent 100%
+  );
+}
+
+/* Empty State */
+.history-panel__empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Timeline */
+.history-panel__timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+/* === History Entry === */
+.history-entry {
+  display: flex;
+  gap: 1rem;
+  position: relative;
+}
+
+/* Timeline elements */
+.history-entry__timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.history-entry__line {
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    var(--gold-shadow) 0%,
+    var(--gold-dark) 50%,
+    var(--gold-shadow) 100%
+  );
+}
+
+.history-entry__line.top {
+  height: 20px;
+}
+
+.history-entry__line.bottom {
+  flex: 1;
+  min-height: 20px;
+}
+
+.history-entry:first-child .history-entry__line.top {
+  opacity: 0;
+}
+
+.history-entry__node {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(145deg, #2a2018, #1a1410);
+  border: 3px solid var(--gold-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.history-entry--latest .history-entry__node {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.history-entry__node-icon {
+  font-size: 1.1rem;
+}
+
+/* Entry content */
+.history-entry__content {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: rgba(26, 20, 16, 0.6);
+  border: 1px solid var(--gold-shadow);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.history-entry:hover .history-entry__content {
+  background: rgba(36, 28, 20, 0.8);
+  border-color: var(--gold-mid);
+}
+
+.history-entry--latest .history-entry__content {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--gold-mid);
+}
+
+.history-entry__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.history-entry__number {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.history-entry__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gold-mid);
+  margin: 0;
+  flex: 1;
+}
+
+.history-entry--latest .history-entry__title {
+  color: var(--gold-bright);
+}
+
+.history-entry__badge {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  background: var(--gold-mid);
+  color: var(--dark-bg);
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.history-entry__description {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+
+.history-entry__id {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* === Notes Panel === */
+.history-panel__notes {
+  height: fit-content;
+  position: sticky;
+  top: 90px;
+}
+
+.history-notes__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #5a3a1a;
+  margin: 0 0 1.25rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.history-notes__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.history-note {
+  display: flex;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.2);
+}
+
+.history-note:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.history-note__icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.history-note__text {
+  flex: 1;
+}
+
+.history-note__text strong {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: #5a3a1a;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.history-note__text p {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: #4a3a2a;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.history-notes__seal {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(139, 90, 43, 0.2);
+  color: #8b5a2b;
+  font-size: 1.5rem;
+  opacity: 0.6;
+}
+
+/* === Responsive === */
+@media (max-width: 900px) {
+  .history-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .history-panel__notes {
+    position: static;
+  }
+
+  .history-stats {
+    flex-wrap: wrap;
+  }
+
+  .history-stat {
+    min-width: calc(50% - 0.75rem);
+  }
+}

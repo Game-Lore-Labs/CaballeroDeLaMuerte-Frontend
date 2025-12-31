@@ -1,11 +1,12 @@
 {
-  "name": "rpg-bot-frontend",
+  "name": "rpg-frontend-caballero-muerte",
   "version": "1.0.0",
+  "description": "Frontend for Caballero de la Muerte RPG Game - Pathfinder inspired UI",
   "private": true,
   "dependencies": {
-    "lucide-react": "^0.294.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -15,7 +16,8 @@
   },
   "eslintConfig": {
     "extends": [
-      "react-app"
+      "react-app",
+      "react-app/jest"
     ]
   },
   "browserslist": {
@@ -30,10 +32,5 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "autoprefixer": "^10.4.23",
-    "postcss": "^8.5.6",
-    "react-scripts": "^5.0.1",
-    "tailwindcss": "^3.4.19"
-  }
+  "proxy": "http://localhost:3000"
 }

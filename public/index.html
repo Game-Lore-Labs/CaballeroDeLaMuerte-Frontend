@@ -2,19 +2,67 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#1a1410" />
     <meta
       name="description"
-      content="El Escudero del Caballero de la Muerte - Aventura de libro-juego interactivo"
+      content="El Escudero del Caballero de la Muerte - Una aventura interactiva RPG"
     />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=MedievalSharp&family=Uncial+Antiqua&display=swap" rel="stylesheet">
+    
     <title>El Escudero del Caballero de la Muerte</title>
+    
+    <style>
+      /* Critical CSS for initial load */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #1a1410;
+        font-family: 'Cormorant Garamond', serif;
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Initial loading indicator */
+      .initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, #2a2018 0%, #1a1410 100%);
+      }
+      
+      .initial-loader__spinner {
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(212, 175, 55, 0.2);
+        border-top-color: #d4af37;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
     <noscript>Necesitas habilitar JavaScript para ejecutar esta aplicación.</noscript>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Initial loading state -->
+      <div class="initial-loader">
+        <div class="initial-loader__spinner"></div>
+      </div>
+    </div>
   </body>
 </html>
