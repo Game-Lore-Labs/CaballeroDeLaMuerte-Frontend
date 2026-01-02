@@ -10,22 +10,38 @@ import {
   SkillsIcon,
   ShieldIcon,
   SwordIcon,
+  getItemIcon,
+  MiscItemIcon,
 } from '../ui';
 import { 
-  ATTRIBUTE_NAMES_ES, 
-  ATTRIBUTE_ABBR, 
-  getAttributeModifier, 
   formatModifier,
-  SKILL_NAMES_ES,
-  SKILLS,
 } from '../../utils/constants';
 import './CharacterSheet.css';
 
-// Attribute display component
-const AttributeBox = ({ attribute, score }) => {
-  const modifier = getAttributeModifier(score);
-  const abbr = ATTRIBUTE_ABBR[attribute];
-  const name = ATTRIBUTE_NAMES_ES[attribute];
+// Función para obtener la ruta del icono basándose en el ID del item
+// Intenta cargar directamente /Icons/{id}.png
+const getItemIconPath = (itemId) => {
+  if (!itemId) return null;
+  return `/Icons/${itemId}.png`;
+};
+
+// Mapeo de claves de atributos del backend a abreviaturas en español
+const ATTR_KEY_TO_ABBR = {
+  strength: 'FUE',
+  dexterity: 'DES',
+  constitution: 'CON',
+  intelligence: 'INT',
+  wisdom: 'SAB',
+  charisma: 'CAR',
+};
+
+// Orden de atributos para mostrar
+const ATTRIBUTE_ORDER = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
+
+// Attribute display component - ahora recibe los datos directamente del backend
+const AttributeBox = ({ attrKey, attrData }) => {
+  const { score, modifier, name } = attrData;
+  const abbr = ATTR_KEY_TO_ABBR[attrKey];
   
   return (
     <div className="attribute-box">
@@ -39,40 +55,32 @@ const AttributeBox = ({ attribute, score }) => {
   );
 };
 
-// Skill list component
-const SkillList = ({ skills = {}, attributes = {} }) => {
-  const skillEntries = Object.keys(SKILLS).map(skill => {
-    const attr = SKILLS[skill];
-    const attrScore = attributes[attr] || 10;
-    const modifier = getAttributeModifier(attrScore);
-    const profLevel = skills[skill] || 'NotProficient';
-    
-    let bonus = modifier;
-    if (profLevel === 'Proficient') bonus += 2;
-    if (profLevel === 'Expertise') bonus += 4;
-    
-    return {
-      skill,
-      name: SKILL_NAMES_ES[skill],
-      attr: ATTRIBUTE_ABBR[attr],
-      bonus,
-      proficient: profLevel !== 'NotProficient',
-      expertise: profLevel === 'Expertise',
-    };
-  });
+// Skill list component - ahora usa los datos de skills directamente del backend
+const SkillList = ({ skills = {}, proficiencyBonus = 2 }) => {
+  // Convertir el objeto de skills a array ordenado por nombre
+  const skillEntries = Object.entries(skills)
+    .map(([key, skillData]) => ({
+      key,
+      name: skillData.name,
+      bonus: skillData.bonus,
+      // Determinar proficiencia basado en si el bonus es mayor que el modificador base
+      // Asumimos que si bonus >= proficiencyBonus, tiene proficiencia
+      proficient: skillData.proficient || false,
+      expertise: skillData.expertise || false,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   return (
     <div className="skill-list">
-      {skillEntries.map(({ skill, name, attr, bonus, proficient, expertise }) => (
+      {skillEntries.map(({ key, name, bonus, proficient, expertise }) => (
         <div 
-          key={skill} 
+          key={key} 
           className={`skill-row ${proficient ? 'skill-row--proficient' : ''} ${expertise ? 'skill-row--expertise' : ''}`}
         >
           <span className="skill-row__prof">
             {expertise ? '◆' : proficient ? '●' : '○'}
           </span>
           <span className="skill-row__name">{name}</span>
-          <span className="skill-row__attr">({attr})</span>
           <span className={`skill-row__bonus ${bonus >= 0 ? 'positive' : 'negative'}`}>
             {formatModifier(bonus)}
           </span>
@@ -83,26 +91,30 @@ const SkillList = ({ skills = {}, attributes = {} }) => {
 };
 
 // Combat stats component
-const CombatStats = ({ ac, speed, profBonus }) => (
+const CombatStats = ({ ac, speed, profBonus, initiative }) => (
   <div className="combat-stats">
     <div className="combat-stat">
       <span className="combat-stat__value">{ac}</span>
       <span className="combat-stat__label">CA</span>
     </div>
     <div className="combat-stat">
-      <span className="combat-stat__value">{speed || 0}</span>
+      <span className="combat-stat__value">{speed || 30}</span>
       <span className="combat-stat__label">Velocidad</span>
     </div>
     <div className="combat-stat">
-      <span className="combat-stat__value">+{profBonus || 0}</span>
+      <span className="combat-stat__value">+{profBonus || 2}</span>
       <span className="combat-stat__label">Competencia</span>
+    </div>
+    <div className="combat-stat">
+      <span className="combat-stat__value">{formatModifier(initiative || 0)}</span>
+      <span className="combat-stat__label">Iniciativa</span>
     </div>
   </div>
 );
 
 // Main CharacterSheet component
-const CharacterSheet = ({ character }) => {
-  if (!character) {
+const CharacterSheet = ({ characterSheet }) => {
+  if (!characterSheet) {
     return (
       <div className="character-sheet character-sheet--empty">
         <Panel variant="dark" title="Personaje" icon={<ShieldIcon size={20} />}>
@@ -112,29 +124,34 @@ const CharacterSheet = ({ character }) => {
     );
   }
 
-  // Extract character data - adapt to backend format
+  // Extract character data from the new /character/sheet endpoint format
+  const {
+    attributes = {},
+    basicInfo = {},
+    combatStats = {},
+    skills = {},
+    equipment = [],
+    inventory = [],
+    clues = [],
+  } = characterSheet;
+
+  // Extraer datos de combate
   const {
     currentHP = 14,
     maxHP = 14,
-    ac = 15,
-    inventory = [],
-    equipment = [],
-    clues = [],
-  } = character;
+    armorClass: ac = 15,
+    speed = 30,
+    proficiencyBonus: profBonus = 2,
+    initiative = 0,
+  } = combatStats;
 
-  
-  const defaultAttributes = {
-    Strength: 0,
-    Dexterity: 0,
-    Constitution: 0,
-    Intelligence: 0,
-    Wisdom: 0,
-    Charisma: 0,
-  };
-
-  const defaultSkills = {
-    
-  };
+  // Extraer info básica
+  const {
+    class: characterClass = 'Aventurero',
+    level = 1,
+    race = '',
+    background = '',
+  } = basicInfo;
 
   return (
     <div className="character-sheet">
@@ -156,7 +173,7 @@ const CharacterSheet = ({ character }) => {
             </div>
             <div className="character-portrait__info">
               <h2 className="character-portrait__name">Iksa Pen</h2>
-              <p className="character-portrait__class">Pícaro • Nivel 2</p>
+              <p className="character-portrait__class">{characterClass} • Nivel {level}</p>
             </div>
           </div>
         </Panel>
@@ -173,7 +190,7 @@ const CharacterSheet = ({ character }) => {
                 size="large"
               />
             </div>
-            <CombatStats ac={ac} speed={0} profBonus={0} />
+            <CombatStats ac={ac} speed={speed} profBonus={profBonus} initiative={initiative} />
           </div>
         </Panel>
       </div>
@@ -183,16 +200,19 @@ const CharacterSheet = ({ character }) => {
         {/* Left column - Attributes */}
         <Panel variant="dark" title="Atributos" icon={<AttributesIcon size={20} />} className="attributes-panel">
           <div className="attributes-grid">
-            {Object.entries(defaultAttributes).map(([attr, score]) => (
-              <AttributeBox key={attr} attribute={attr} score={score} />
-            ))}
+            {ATTRIBUTE_ORDER.map((attrKey) => {
+              const attrData = attributes[attrKey];
+              return attrData ? (
+                <AttributeBox key={attrKey} attrKey={attrKey} attrData={attrData} />
+              ) : null;
+            })}
           </div>
         </Panel>
 
         {/* Right column - Skills */}
         <Panel variant="dark" title="Habilidades" icon={<SkillsIcon size={20} />} className="skills-panel">
           <div className="skills-container">
-            <SkillList skills={defaultSkills} attributes={defaultAttributes} />
+            <SkillList skills={skills} proficiencyBonus={profBonus} />
           </div>
         </Panel>
       </div>
@@ -200,17 +220,20 @@ const CharacterSheet = ({ character }) => {
       {/* Saving throws */}
       <Panel variant="dark" title="Tiradas de Salvación" icon={<ShieldIcon size={20} />} className="saves-panel">
         <div className="saves-grid">
-          {Object.entries(defaultAttributes).map(([attr, score]) => {
-            const modifier = getAttributeModifier(score);
-            const isProficient = attr === 'Dexterity' || attr === 'Intelligence';
-            const bonus = isProficient ? modifier + 2 : modifier;
+          {ATTRIBUTE_ORDER.map((attrKey) => {
+            const attrData = attributes[attrKey];
+            if (!attrData) return null;
+            
+            const { savingThrow, modifier, name } = attrData;
+            const isProficient = savingThrow > modifier;
+            const abbr = ATTR_KEY_TO_ABBR[attrKey];
             
             return (
-              <div key={attr} className={`save-item ${isProficient ? 'save-item--proficient' : ''}`}>
+              <div key={attrKey} className={`save-item ${isProficient ? 'save-item--proficient' : ''}`}>
                 <span className="save-item__prof">{isProficient ? '●' : '○'}</span>
-                <span className="save-item__name">{ATTRIBUTE_ABBR[attr]}</span>
-                <span className={`save-item__bonus ${bonus >= 0 ? 'positive' : 'negative'}`}>
-                  {formatModifier(bonus)}
+                <span className="save-item__name">{abbr}</span>
+                <span className={`save-item__bonus ${savingThrow >= 0 ? 'positive' : 'negative'}`}>
+                  {formatModifier(savingThrow)}
                 </span>
               </div>
             );
@@ -222,15 +245,29 @@ const CharacterSheet = ({ character }) => {
       {equipment.length > 0 && (
         <Panel variant="dark" title="Equipamiento" icon={<SwordIcon size={20} />} className="equipment-panel">
           <div className="equipment-list">
-            {equipment.map((item, idx) => (
-              <div key={idx} className="equipment-item">
-                <span className="equipment-item__icon"><SwordIcon size={24} /></span>
-                <div className="equipment-item__info">
-                  <span className="equipment-item__name">{item.name}</span>
-                  <span className="equipment-item__desc">{item.description}</span>
+            {equipment.map((item, idx) => {
+              const iconPath = getItemIconPath(item.id);
+              const FallbackIcon = getItemIcon(item.name) || MiscItemIcon;
+              return (
+                <div key={idx} className="equipment-item">
+                  <span className="equipment-item__icon">
+                    <img 
+                      src={iconPath} 
+                      alt={item.name} 
+                      className="equipment-item__img"
+                      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    />
+                    <span className="equipment-item__fallback-icon" style={{ display: 'none' }}>
+                      <FallbackIcon size={24} />
+                    </span>
+                  </span>
+                  <div className="equipment-item__info">
+                    <span className="equipment-item__name">{item.name}</span>
+                    <span className="equipment-item__desc">{item.description}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Panel>
       )}

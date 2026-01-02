@@ -14,13 +14,22 @@ import {
   EmptySlotIcon,
   InventoryIcon,
   ScrollIcon,
+  MiscItemIcon,
 } from '../ui';
 import './Inventory.css';
+
+// Función para obtener la ruta del icono basándose en el ID del item
+// Intenta cargar directamente /Icons/{id}.png
+const getItemIconPath = (itemId) => {
+  if (!itemId) return null;
+  return `/Icons/${itemId}.png`;
+};
 
 // Individual inventory slot
 const InventorySlot = ({ item, index, isSelected, onClick }) => {
   const isEmpty = !item;
-  const ItemIcon = item ? getItemIcon(item.name) : null;
+  const iconPath = item ? getItemIconPath(item.id) : null;
+  const FallbackIcon = item ? (getItemIcon(item.name) || MiscItemIcon) : null;
   
   return (
     <div 
@@ -31,7 +40,15 @@ const InventorySlot = ({ item, index, isSelected, onClick }) => {
       {item ? (
         <>
           <span className="inventory-slot__icon">
-            <ItemIcon size={28} />
+            <img 
+              src={iconPath} 
+              alt={item.name} 
+              className="inventory-slot__img"
+              onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+            />
+            <span className="inventory-slot__fallback" style={{ display: 'none' }}>
+              <FallbackIcon size={28} />
+            </span>
           </span>
           <span className="inventory-slot__shine" />
         </>
@@ -60,13 +77,22 @@ const ItemDetail = ({ item }) => {
     );
   }
   
-  const ItemIcon = getItemIcon(item.name);
+  const iconPath = getItemIconPath(item.id);
+  const FallbackIcon = getItemIcon(item.name) || MiscItemIcon;
   
   return (
     <div className="item-detail">
       <div className="item-detail__header">
         <div className="item-detail__icon-frame">
-          <ItemIcon size={36} />
+          <img 
+            src={iconPath} 
+            alt={item.name} 
+            className="item-detail__img"
+            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+          />
+          <span className="item-detail__fallback" style={{ display: 'none' }}>
+            <FallbackIcon size={36} />
+          </span>
         </div>
         <h3 className="item-detail__name">{item.name}</h3>
       </div>
@@ -83,7 +109,8 @@ const ItemDetail = ({ item }) => {
 
 // Equipment slot component
 const EquipmentSlot = ({ item, slotName, SlotIcon, onClick, isSelected }) => {
-  const ItemIcon = item ? getItemIcon(item.name) : null;
+  const iconPath = item ? getItemIconPath(item.id) : null;
+  const FallbackIcon = item ? (getItemIcon(item.name) || MiscItemIcon) : null;
   
   return (
     <div 
@@ -93,7 +120,15 @@ const EquipmentSlot = ({ item, slotName, SlotIcon, onClick, isSelected }) => {
       <div className="equipment-slot__frame">
         {item ? (
           <span className="equipment-slot__item-icon">
-            <ItemIcon size={32} />
+            <img 
+              src={iconPath} 
+              alt={item.name} 
+              className="equipment-slot__img"
+              onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+            />
+            <span className="equipment-slot__fallback" style={{ display: 'none' }}>
+              <FallbackIcon size={32} />
+            </span>
           </span>
         ) : (
           <span className="equipment-slot__placeholder">

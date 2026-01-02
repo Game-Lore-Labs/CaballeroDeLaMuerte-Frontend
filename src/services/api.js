@@ -106,6 +106,13 @@ export async function getCharacter() {
 }
 
 /**
+ * Get full character sheet with attributes, skills, equipment, etc.
+ */
+export async function getCharacterSheet() {
+  return apiRequest('/character/sheet');
+}
+
+/**
  * Get player inventory
  */
 export async function getInventory() {
@@ -296,6 +303,7 @@ const api = {
   getCurrentEntry,
   selectOption,
   getCharacter,
+  getCharacterSheet,
   getInventory,
   getClues,
   performAbilityCheck,

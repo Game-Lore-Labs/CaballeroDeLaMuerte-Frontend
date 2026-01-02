@@ -96,7 +96,19 @@ const CombatPanel = ({
     );
   }
 
-  const { player, enemies, state: combatStatus } = combatState;
+  const { player, enemies = [], state: combatStatus = 'InProgress' } = combatState;
+  
+  // Validar que player y enemies existan
+  if (!player || !enemies) {
+    return (
+      <div className="combat-panel combat-panel--empty">
+        <Panel variant="dark" title="Combate" icon="⚔️">
+          <p className="empty-message">Cargando combate...</p>
+        </Panel>
+      </div>
+    );
+  }
+  
   const aliveEnemies = enemies.filter(e => e.currentHP > 0);
   const isVictory = combatStatus === 'Victory';
   const isDefeat = combatStatus === 'Defeat';
@@ -162,16 +174,16 @@ const CombatPanel = ({
             <div className="player-combat-card__portrait">
               <span>🦹</span>
             </div>
-            <h3 className="player-combat-card__name">Iksa Pen</h3>
+            <h3 className="player-combat-card__name">Jugador</h3>
             <StatBar
-              current={player.currentHP}
-              max={player.maxHP}
+              current={player.currentHP || 0}
+              max={player.maxHP || 1}
               label="PV"
               variant="health"
               size="medium"
             />
             <div className="player-combat-card__stats">
-              <span>CA: {player.ac}</span>
+              <span>CA: {player.ac || 0}</span>
             </div>
           </Panel>
         </div>

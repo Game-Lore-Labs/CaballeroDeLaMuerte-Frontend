@@ -19,6 +19,7 @@ const initialState = {
   
   // Player character
   character: null,
+  characterSheet: null,
   inventory: [],
   clues: [],
   
@@ -42,6 +43,7 @@ const ActionTypes = {
   GAME_LOADED: 'GAME_LOADED',
   UPDATE_ENTRY: 'UPDATE_ENTRY',
   UPDATE_CHARACTER: 'UPDATE_CHARACTER',
+  UPDATE_CHARACTER_SHEET: 'UPDATE_CHARACTER_SHEET',
   UPDATE_GAME_STATE: 'UPDATE_GAME_STATE',
   SET_OPTION_RESULT: 'SET_OPTION_RESULT',
   ENTER_COMBAT: 'ENTER_COMBAT',
@@ -84,6 +86,12 @@ function gameReducer(state, action) {
       return {
         ...state,
         character: action.payload,
+      };
+      
+    case ActionTypes.UPDATE_CHARACTER_SHEET:
+      return {
+        ...state,
+        characterSheet: action.payload,
       };
       
     case ActionTypes.UPDATE_GAME_STATE:
@@ -172,14 +180,16 @@ export function GameProvider({ children }) {
       await api.loadGame();
       
       // Fetch initial data
-      const [entry, character, gameState] = await Promise.all([
+      const [entry, character, characterSheet, gameState] = await Promise.all([
         api.getCurrentEntry(),
         api.getCharacter(),
+        api.getCharacterSheet(),
         api.getGameState(),
       ]);
       
       dispatch({ type: ActionTypes.UPDATE_ENTRY, payload: entry });
       dispatch({ type: ActionTypes.UPDATE_CHARACTER, payload: character });
+      dispatch({ type: ActionTypes.UPDATE_CHARACTER_SHEET, payload: characterSheet });
       dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: gameState });
       dispatch({ type: ActionTypes.GAME_LOADED });
       
@@ -214,9 +224,21 @@ export function GameProvider({ children }) {
       
       // Handle different result types
       if (result.type === 'combat_started') {
-        const combatStatus = await api.getCombatStatus();
-        dispatch({ type: ActionTypes.ENTER_COMBAT, payload: combatStatus });
-        addNotification('¡Combate iniciado!', 'warning');
+        // El combate se inició - obtener el estado de combate
+        try {
+          const combatStatus = await api.getCombatStatus();
+          dispatch({ type: ActionTypes.ENTER_COMBAT, payload: combatStatus });
+          addNotification('¡Combate iniciado!', 'warning');
+        } catch (combatError) {
+          console.error('Error getting combat status:', combatError);
+          // Si falla obtener el estado de combate, intentar con los datos del resultado
+          if (result.combatState) {
+            dispatch({ type: ActionTypes.ENTER_COMBAT, payload: result.combatState });
+            addNotification('¡Combate iniciado!', 'warning');
+          } else {
+            addNotification('Error al iniciar combate', 'error');
+          }
+        }
       } else {
         // Fetch updated entry
         const entry = await api.getCurrentEntry();
@@ -230,9 +252,11 @@ export function GameProvider({ children }) {
         }
       }
       
-      // Update game state
-      const gameState = await api.getGameState();
-      dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: gameState });
+      // Update game state (only if not in combat)
+      if (result.type !== 'combat_started') {
+        const gameState = await api.getGameState();
+        dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: gameState });
+      }
       
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       return result;
@@ -253,29 +277,45 @@ export function GameProvider({ children }) {
     }
   }, []);
 
+  // Refresh character sheet data
+  const refreshCharacterSheet = useCallback(async () => {
+    try {
+      const characterSheet = await api.getCharacterSheet();
+      dispatch({ type: ActionTypes.UPDATE_CHARACTER_SHEET, payload: characterSheet });
+    } catch (error) {
+      console.error('Error refreshing character sheet:', error);
+    }
+  }, []);
+
   // Combat actions
   const attack = useCallback(async (targetIndex, weaponIndex = 0) => {
     dispatch({ type: ActionTypes.SET_LOADING, payload: true });
     
     try {
-      const result = await api.playerAttack(targetIndex, weaponIndex);
+      const results = await api.playerAttack(targetIndex, weaponIndex);
+      
+      // playerAttack puede devolver un array de resultados
+      const resultsArray = Array.isArray(results) ? results : [results];
       
       // Update combat state
       const combatStatus = await api.getCombatStatus();
       dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: combatStatus });
       
-      // Notification
-      if (result.type === 'player_hit') {
-        addNotification(`¡Golpe! ${result.damage} de daño`, 'success');
-      } else if (result.type === 'player_miss') {
-        addNotification(`¡Fallaste! (${result.roll})`, 'warning');
-      } else if (result.type === 'enemy_defeated') {
-        addNotification(`¡${result.actor} derrotado!`, 'success');
-      }
+      // Notification for each result
+      resultsArray.forEach(result => {
+        if (result.type === 'player_hit') {
+          addNotification(`¡Golpe! ${result.damage} de daño`, 'success');
+        } else if (result.type === 'player_miss') {
+          addNotification(`¡Fallaste! (${result.roll})`, 'warning');
+        } else if (result.type === 'enemy_defeated') {
+          addNotification(`¡${result.actor} derrotado!`, 'success');
+        }
+      });
       
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-      return result;
+      return resultsArray[0] || results; // Devolver el primer resultado para compatibilidad
     } catch (error) {
+      dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
       throw error;
     }
@@ -287,12 +327,15 @@ export function GameProvider({ children }) {
     try {
       const results = await api.enemyTurn();
       
+      // enemyTurn devuelve un array de resultados
+      const resultsArray = Array.isArray(results) ? results : [results];
+      
       // Update combat state
       const combatStatus = await api.getCombatStatus();
       dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: combatStatus });
       
       // Notifications for each attack
-      results.forEach(result => {
+      resultsArray.forEach(result => {
         if (result.type === 'enemy_hit') {
           addNotification(`${result.actor} te golpea por ${result.damage}`, 'error');
         } else if (result.type === 'enemy_miss') {
@@ -303,8 +346,9 @@ export function GameProvider({ children }) {
       });
       
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-      return results;
+      return resultsArray;
     } catch (error) {
+      dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
       throw error;
     }
@@ -314,9 +358,14 @@ export function GameProvider({ children }) {
     dispatch({ type: ActionTypes.SET_LOADING, payload: true });
     
     try {
-      const gameState = await api.endCombat();
+      // endCombat devuelve el nuevo game state
+      const result = await api.endCombat();
       dispatch({ type: ActionTypes.EXIT_COMBAT });
-      dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: gameState });
+      
+      // result contiene currentEntry, history, player
+      if (result) {
+        dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: result });
+      }
       
       // Get new entry
       const entry = await api.getCurrentEntry();
@@ -325,6 +374,7 @@ export function GameProvider({ children }) {
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       addNotification('Combate terminado', 'info');
     } catch (error) {
+      dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
       throw error;
     }
@@ -355,6 +405,7 @@ export function GameProvider({ children }) {
     saveGame,
     selectOption,
     refreshCharacter,
+    refreshCharacterSheet,
     attack,
     processEnemyTurn,
     finishCombat,

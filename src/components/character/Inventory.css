@@ -126,6 +126,23 @@
 
 .equipment-slot__item-icon {
   color: var(--gold-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.equipment-slot__img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.equipment-slot__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-mid);
 }
 
 .equipment-slot__name {
@@ -237,6 +254,20 @@
   align-items: center;
   justify-content: center;
   z-index: 1;
+  color: var(--gold-mid);
+}
+
+.inventory-slot__img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.inventory-slot__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--gold-mid);
 }
 
@@ -353,6 +384,20 @@
   justify-content: center;
   color: #5a3a1a;
   flex-shrink: 0;
+}
+
+.item-detail__img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.item-detail__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5a3a1a;
 }
 
 .item-detail__name {

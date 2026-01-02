@@ -396,6 +396,25 @@
 
 .equipment-item__icon {
   font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.equipment-item__img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.equipment-item__fallback-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-mid);
 }
 
 .equipment-item__info {

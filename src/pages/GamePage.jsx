@@ -67,6 +67,7 @@ const GamePage = () => {
     narrative,
     options,
     character,
+    characterSheet,
     history,
     currentEntry,
     inCombat,
@@ -172,7 +173,7 @@ const GamePage = () => {
         );
       
       case 'character':
-        return <CharacterSheet character={character} />;
+        return <CharacterSheet characterSheet={characterSheet} />;
       
       case 'inventory':
         return (
