@@ -3,7 +3,14 @@
 // ============================================================================
 
 import React from 'react';
-import { Panel, StatBar } from '../ui';
+import { 
+  Panel, 
+  StatBar,
+  AttributesIcon,
+  SkillsIcon,
+  ShieldIcon,
+  SwordIcon,
+} from '../ui';
 import { 
   ATTRIBUTE_NAMES_ES, 
   ATTRIBUTE_ABBR, 
@@ -83,11 +90,11 @@ const CombatStats = ({ ac, speed, profBonus }) => (
       <span className="combat-stat__label">CA</span>
     </div>
     <div className="combat-stat">
-      <span className="combat-stat__value">{speed || 30}</span>
+      <span className="combat-stat__value">{speed || 0}</span>
       <span className="combat-stat__label">Velocidad</span>
     </div>
     <div className="combat-stat">
-      <span className="combat-stat__value">+{profBonus || 2}</span>
+      <span className="combat-stat__value">+{profBonus || 0}</span>
       <span className="combat-stat__label">Competencia</span>
     </div>
   </div>
@@ -98,7 +105,7 @@ const CharacterSheet = ({ character }) => {
   if (!character) {
     return (
       <div className="character-sheet character-sheet--empty">
-        <Panel variant="dark" title="Personaje" icon="👤">
+        <Panel variant="dark" title="Personaje" icon={<ShieldIcon size={20} />}>
           <p className="empty-message">No hay personaje cargado</p>
         </Panel>
       </div>
@@ -115,21 +122,18 @@ const CharacterSheet = ({ character }) => {
     clues = [],
   } = character;
 
-  // Default stat block for Iksa Pen
+  
   const defaultAttributes = {
-    Strength: 9,
-    Dexterity: 16,
-    Constitution: 12,
-    Intelligence: 16,
-    Wisdom: 12,
-    Charisma: 12,
+    Strength: 0,
+    Dexterity: 0,
+    Constitution: 0,
+    Intelligence: 0,
+    Wisdom: 0,
+    Charisma: 0,
   };
 
   const defaultSkills = {
-    Investigation: 'Expertise',
-    Stealth: 'Expertise',
-    Acrobatics: 'Proficient',
-    Perception: 'Proficient',
+    
   };
 
   return (
@@ -138,9 +142,16 @@ const CharacterSheet = ({ character }) => {
       <div className="character-sheet__header">
         <Panel variant="gold" className="character-portrait-panel">
           <div className="character-portrait">
-            <div className="character-portrait__frame">
-              <div className="character-portrait__image">
-                <span className="character-portrait__placeholder">🦹</span>
+            <div className="character-portrait__frame character-portrait__frame--video">
+              <div className="character-portrait__video-container">
+                <video 
+                  className="character-portrait__video"
+                  src="/video/iksapen.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
               </div>
             </div>
             <div className="character-portrait__info">
@@ -162,7 +173,7 @@ const CharacterSheet = ({ character }) => {
                 size="large"
               />
             </div>
-            <CombatStats ac={ac} speed={30} profBonus={2} />
+            <CombatStats ac={ac} speed={0} profBonus={0} />
           </div>
         </Panel>
       </div>
@@ -170,7 +181,7 @@ const CharacterSheet = ({ character }) => {
       {/* Main content - two columns */}
       <div className="character-sheet__body">
         {/* Left column - Attributes */}
-        <Panel variant="dark" title="Atributos" icon="💪" className="attributes-panel">
+        <Panel variant="dark" title="Atributos" icon={<AttributesIcon size={20} />} className="attributes-panel">
           <div className="attributes-grid">
             {Object.entries(defaultAttributes).map(([attr, score]) => (
               <AttributeBox key={attr} attribute={attr} score={score} />
@@ -179,7 +190,7 @@ const CharacterSheet = ({ character }) => {
         </Panel>
 
         {/* Right column - Skills */}
-        <Panel variant="dark" title="Habilidades" icon="🎯" className="skills-panel">
+        <Panel variant="dark" title="Habilidades" icon={<SkillsIcon size={20} />} className="skills-panel">
           <div className="skills-container">
             <SkillList skills={defaultSkills} attributes={defaultAttributes} />
           </div>
@@ -187,7 +198,7 @@ const CharacterSheet = ({ character }) => {
       </div>
 
       {/* Saving throws */}
-      <Panel variant="dark" title="Tiradas de Salvación" icon="🛡️" className="saves-panel">
+      <Panel variant="dark" title="Tiradas de Salvación" icon={<ShieldIcon size={20} />} className="saves-panel">
         <div className="saves-grid">
           {Object.entries(defaultAttributes).map(([attr, score]) => {
             const modifier = getAttributeModifier(score);
@@ -209,11 +220,11 @@ const CharacterSheet = ({ character }) => {
 
       {/* Equipment section */}
       {equipment.length > 0 && (
-        <Panel variant="dark" title="Equipamiento" icon="⚔️" className="equipment-panel">
+        <Panel variant="dark" title="Equipamiento" icon={<SwordIcon size={20} />} className="equipment-panel">
           <div className="equipment-list">
             {equipment.map((item, idx) => (
               <div key={idx} className="equipment-item">
-                <span className="equipment-item__icon">🗡️</span>
+                <span className="equipment-item__icon"><SwordIcon size={24} /></span>
                 <div className="equipment-item__info">
                   <span className="equipment-item__name">{item.name}</span>
                   <span className="equipment-item__desc">{item.description}</span>

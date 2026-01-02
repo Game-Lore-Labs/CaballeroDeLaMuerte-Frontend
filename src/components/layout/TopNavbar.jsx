@@ -3,6 +3,16 @@
 // ============================================================================
 
 import React from 'react';
+import {
+  AdventureIcon,
+  CharacterIcon,
+  InventoryIcon,
+  CluesIcon,
+  HistoryIcon,
+  LoadIcon,
+  SaveIcon,
+  CrossedSwordsIcon,
+} from '../ui';
 import './TopNavbar.css';
 
 const NavItem = ({ icon, label, active, onClick, badge }) => (
@@ -26,11 +36,11 @@ const TopNavbar = ({
   saving = false,
 }) => {
   const navItems = [
-    { id: 'adventure', icon: '📖', label: 'Aventura' },
-    { id: 'character', icon: '👤', label: 'Personaje' },
-    { id: 'inventory', icon: '🎒', label: 'Inventario', badge: character?.inventory?.length || 0 },
-    { id: 'clues', icon: '🔍', label: 'Pistas', badge: character?.clues?.length || 0 },
-    { id: 'history', icon: '📜', label: 'Historial' },
+    { id: 'adventure', icon: <AdventureIcon size={22} />, label: 'Aventura' },
+    { id: 'character', icon: <CharacterIcon size={22} />, label: 'Personaje' },
+    { id: 'inventory', icon: <InventoryIcon size={22} />, label: 'Inventario', badge: character?.inventory?.length || 0 },
+    { id: 'clues', icon: <CluesIcon size={22} />, label: 'Pistas', badge: character?.clues?.length || 0 },
+    { id: 'history', icon: <HistoryIcon size={22} />, label: 'Historial' },
   ];
 
   return (
@@ -40,7 +50,9 @@ const TopNavbar = ({
       
       {/* Left section - Logo/Title */}
       <div className="top-navbar__brand">
-        <span className="top-navbar__brand-icon">⚔️</span>
+        <span className="top-navbar__brand-icon">
+          <CrossedSwordsIcon size={28} color="var(--gold-mid)" />
+        </span>
         <div className="top-navbar__brand-text">
           <span className="top-navbar__title">Caballero de la Muerte</span>
           <span className="top-navbar__subtitle">
@@ -70,7 +82,7 @@ const TopNavbar = ({
           onClick={onLoad}
           title="Cargar partida"
         >
-          <span>📂</span>
+          <LoadIcon size={20} />
         </button>
         <button 
           className="navbar-action-btn" 
@@ -78,7 +90,11 @@ const TopNavbar = ({
           disabled={saving}
           title="Guardar partida"
         >
-          <span>{saving ? '⏳' : '💾'}</span>
+          {saving ? (
+            <span className="navbar-action-btn__loading" />
+          ) : (
+            <SaveIcon size={20} />
+          )}
         </button>
       </div>
       

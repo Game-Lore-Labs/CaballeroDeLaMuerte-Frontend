@@ -1,0 +1,76 @@
+/* ============================================================================
+   RPGIcons.css - Styles for RPG Icon Components
+   ============================================================================ */
+
+.rpg-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+/* Size variants */
+.rpg-icon--xs { width: 14px; height: 14px; }
+.rpg-icon--sm { width: 18px; height: 18px; }
+.rpg-icon--md { width: 24px; height: 24px; }
+.rpg-icon--lg { width: 32px; height: 32px; }
+.rpg-icon--xl { width: 48px; height: 48px; }
+
+/* Color variants */
+.rpg-icon--gold { color: var(--gold-mid); }
+.rpg-icon--gold-bright { color: var(--gold-bright); }
+.rpg-icon--muted { color: var(--text-muted); }
+.rpg-icon--light { color: var(--text-light); }
+.rpg-icon--danger { color: var(--crimson); }
+.rpg-icon--success { color: var(--emerald); }
+
+/* Animation states */
+.rpg-icon--pulse {
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+.rpg-icon--float {
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+.rpg-icon--glow {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.rpg-icon--glow-gold {
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.6));
+}
+
+@keyframes iconPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Panel header icon styling */
+.rpg-panel__header-icon .rpg-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--gold-mid);
+}
+
+/* Navigation icon styling */
+.nav-item__icon .rpg-icon {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.nav-item:hover .nav-item__icon .rpg-icon {
+  transform: scale(1.1);
+  color: var(--gold-mid);
+}
+
+.nav-item--active .nav-item__icon .rpg-icon {
+  color: var(--gold-bright);
+  filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.5));
+}
