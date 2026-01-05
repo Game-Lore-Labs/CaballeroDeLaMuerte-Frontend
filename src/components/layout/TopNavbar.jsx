@@ -11,6 +11,7 @@ import {
   HistoryIcon,
   LoadIcon,
   SaveIcon,
+  ResetIcon,
   CrossedSwordsIcon,
 } from '../ui';
 import './TopNavbar.css';
@@ -33,7 +34,9 @@ const TopNavbar = ({
   character,
   onSave,
   onLoad,
+  onReset,
   saving = false,
+  resetting = false,
 }) => {
   const navItems = [
     { id: 'adventure', icon: <AdventureIcon size={22} />, label: 'Aventura' },
@@ -77,6 +80,18 @@ const TopNavbar = ({
       
       {/* Right section - Actions */}
       <div className="top-navbar__actions">
+        <button 
+          className="navbar-action-btn navbar-action-btn--danger" 
+          onClick={onReset}
+          disabled={resetting}
+          title="Reiniciar juego"
+        >
+          {resetting ? (
+            <span className="navbar-action-btn__loading" />
+          ) : (
+            <ResetIcon size={20} />
+          )}
+        </button>
         <button 
           className="navbar-action-btn" 
           onClick={onLoad}

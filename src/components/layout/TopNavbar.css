@@ -211,6 +211,18 @@
   cursor: not-allowed;
 }
 
+.navbar-action-btn--danger {
+  background: rgba(139, 69, 69, 0.2);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.navbar-action-btn--danger:hover:not(:disabled) {
+  background: rgba(139, 69, 69, 0.3);
+  border-color: #ff6b6b;
+  box-shadow: 0 0 10px rgba(139, 69, 69, 0.5);
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .top-navbar {

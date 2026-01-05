@@ -13,7 +13,9 @@ const MainLayout = ({
   character,
   onSave,
   onLoad,
+  onReset,
   saving,
+  resetting,
 }) => {
   return (
     <div className="main-layout">
@@ -31,7 +33,9 @@ const MainLayout = ({
         character={character}
         onSave={onSave}
         onLoad={onLoad}
+        onReset={onReset}
         saving={saving}
+        resetting={resetting}
       />
       
       {/* Main Content */}

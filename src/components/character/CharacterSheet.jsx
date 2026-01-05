@@ -113,7 +113,7 @@ const CombatStats = ({ ac, speed, profBonus, initiative }) => (
 );
 
 // Main CharacterSheet component
-const CharacterSheet = ({ characterSheet }) => {
+const CharacterSheet = ({ characterSheet, character }) => {
   if (!characterSheet) {
     return (
       <div className="character-sheet character-sheet--empty">
@@ -131,8 +131,6 @@ const CharacterSheet = ({ characterSheet }) => {
     combatStats = {},
     skills = {},
     equipment = [],
-    inventory = [],
-    clues = [],
   } = characterSheet;
 
   // Extraer datos de combate
@@ -145,13 +143,10 @@ const CharacterSheet = ({ characterSheet }) => {
     initiative = 0,
   } = combatStats;
 
-  // Extraer info básica
-  const {
-    class: characterClass = 'Aventurero',
-    level = 1,
-    race = '',
-    background = '',
-  } = basicInfo;
+  // Extraer info básica - priorizar character del endpoint /character
+  const characterName = character?.name || basicInfo?.name || 'Aventurero';
+  const characterClass = character?.class || basicInfo?.class || 'Aventurero';
+  const level = character?.level || basicInfo?.level || 1;
 
   return (
     <div className="character-sheet">
@@ -172,7 +167,7 @@ const CharacterSheet = ({ characterSheet }) => {
               </div>
             </div>
             <div className="character-portrait__info">
-              <h2 className="character-portrait__name">Iksa Pen</h2>
+              <h2 className="character-portrait__name">{characterName}</h2>
               <p className="character-portrait__class">{characterClass} • Nivel {level}</p>
             </div>
           </div>
@@ -224,7 +219,7 @@ const CharacterSheet = ({ characterSheet }) => {
             const attrData = attributes[attrKey];
             if (!attrData) return null;
             
-            const { savingThrow, modifier, name } = attrData;
+            const { savingThrow, modifier } = attrData;
             const isProficient = savingThrow > modifier;
             const abbr = ATTR_KEY_TO_ABBR[attrKey];
             

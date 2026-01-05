@@ -4,3 +4,4 @@
 
 export { default as AdventurePanel } from './AdventurePanel';
 export { default as CombatPanel } from './CombatPanel';
+export { default as CombatModal } from './CombatModal';

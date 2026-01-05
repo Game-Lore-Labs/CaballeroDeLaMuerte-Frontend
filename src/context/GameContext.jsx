@@ -2,8 +2,9 @@
 // src/context/GameContext.jsx - Game State Context Provider
 // ============================================================================
 
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useRef } from 'react';
 import api from '../services/api';
+import { processEntryEffects, detectCharacterChanges } from '../utils/effectsProcessor';
 
 // Initial state
 const initialState = {
@@ -116,9 +117,14 @@ function gameReducer(state, action) {
       };
       
     case ActionTypes.UPDATE_COMBAT:
+      // Deep clone para asegurar que React detecte el cambio
       return {
         ...state,
-        combatState: action.payload,
+        combatState: action.payload ? {
+          ...action.payload,
+          player: action.payload.player ? { ...action.payload.player } : null,
+          enemies: action.payload.enemies ? action.payload.enemies.map(e => ({ ...e })) : [],
+        } : null,
       };
       
     case ActionTypes.EXIT_COMBAT:
@@ -154,6 +160,9 @@ const GameContext = createContext(null);
 // Provider component
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
+  
+  // Ref to store previous character state for change detection
+  const prevCharacterRef = useRef(null);
 
   // Helper to add notifications
   const addNotification = useCallback((message, type = 'info', duration = 3000) => {
@@ -193,6 +202,9 @@ export function GameProvider({ children }) {
       dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: gameState });
       dispatch({ type: ActionTypes.GAME_LOADED });
       
+      // Initialize character reference for change detection
+      prevCharacterRef.current = character;
+      
       addNotification('Partida cargada correctamente', 'success');
     } catch (error) {
       dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
@@ -218,24 +230,28 @@ export function GameProvider({ children }) {
   const selectOption = useCallback(async (optionId) => {
     dispatch({ type: ActionTypes.SET_LOADING, payload: true });
     
+    // Store previous character state for change detection
+    const prevCharacter = prevCharacterRef.current;
+    
     try {
       const result = await api.selectOption(optionId);
       dispatch({ type: ActionTypes.SET_OPTION_RESULT, payload: result });
       
+      // Detectar si es un combate: tiene enemies, player y state
+      const isCombatResult = result.enemies && result.player && result.state;
+      
       // Handle different result types
-      if (result.type === 'combat_started') {
-        // El combate se inició - obtener el estado de combate
-        try {
-          const combatStatus = await api.getCombatStatus();
-          dispatch({ type: ActionTypes.ENTER_COMBAT, payload: combatStatus });
-          addNotification('¡Combate iniciado!', 'warning');
-        } catch (combatError) {
-          console.error('Error getting combat status:', combatError);
-          // Si falla obtener el estado de combate, intentar con los datos del resultado
-          if (result.combatState) {
-            dispatch({ type: ActionTypes.ENTER_COMBAT, payload: result.combatState });
-            addNotification('¡Combate iniciado!', 'warning');
-          } else {
+      if (result.type === 'combat_started' || isCombatResult) {
+        // El combate se inició
+        if (isCombatResult) {
+          dispatch({ type: ActionTypes.ENTER_COMBAT, payload: result });
+          addNotification('⚔️ ¡Combate iniciado!', 'warning', 4000);
+        } else {
+          try {
+            const combatStatus = await api.getCombatStatus();
+            dispatch({ type: ActionTypes.ENTER_COMBAT, payload: combatStatus });
+            addNotification('⚔️ ¡Combate iniciado!', 'warning', 4000);
+          } catch (combatError) {
             addNotification('Error al iniciar combate', 'error');
           }
         }
@@ -244,18 +260,43 @@ export function GameProvider({ children }) {
         const entry = await api.getCurrentEntry();
         dispatch({ type: ActionTypes.UPDATE_ENTRY, payload: entry });
         
-        // Show result notification
+        // Process effects from the entry if available
+        if (result.effects) {
+          processEntryEffects(result.effects, addNotification);
+        }
+        
+        // Show result notification for skill checks and saves
         if (result.type === 'check_passed' || result.type === 'save_passed') {
-          addNotification(`¡Éxito! (${result.roll} vs DC ${result.dc})`, 'success');
+          const icon = result.type === 'save_passed' ? '🛡️' : '✓';
+          addNotification(`${icon} ¡Éxito! (${result.roll} vs CD ${result.dc})`, 'success', 4000);
         } else if (result.type === 'check_failed' || result.type === 'save_failed') {
-          addNotification(`Fallaste (${result.roll} vs DC ${result.dc})`, 'error');
+          const icon = result.type === 'save_failed' ? '💥' : '✗';
+          addNotification(`${icon} Fallaste (${result.roll} vs CD ${result.dc})`, 'error', 4000);
         }
       }
       
-      // Update game state (only if not in combat)
-      if (result.type !== 'combat_started') {
-        const gameState = await api.getGameState();
+      // Update game state and character data (only if not in combat)
+      const isCombat = result.type === 'combat_started' || (result.enemies && result.player && result.state);
+      if (!isCombat) {
+        // Fetch all updated data in parallel
+        const [gameState, character, characterSheet] = await Promise.all([
+          api.getGameState(),
+          api.getCharacter(),
+          api.getCharacterSheet(),
+        ]);
+        
+        // Detect character changes and show notifications
+        if (prevCharacter) {
+          detectCharacterChanges(prevCharacter, character, addNotification);
+        }
+        
+        // Update state
         dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: gameState });
+        dispatch({ type: ActionTypes.UPDATE_CHARACTER, payload: character });
+        dispatch({ type: ActionTypes.UPDATE_CHARACTER_SHEET, payload: characterSheet });
+        
+        // Store current character for next comparison
+        prevCharacterRef.current = character;
       }
       
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
@@ -272,8 +313,8 @@ export function GameProvider({ children }) {
     try {
       const character = await api.getCharacter();
       dispatch({ type: ActionTypes.UPDATE_CHARACTER, payload: character });
+      prevCharacterRef.current = character;
     } catch (error) {
-      console.error('Error refreshing character:', error);
     }
   }, []);
 
@@ -283,7 +324,6 @@ export function GameProvider({ children }) {
       const characterSheet = await api.getCharacterSheet();
       dispatch({ type: ActionTypes.UPDATE_CHARACTER_SHEET, payload: characterSheet });
     } catch (error) {
-      console.error('Error refreshing character sheet:', error);
     }
   }, []);
 
@@ -292,28 +332,48 @@ export function GameProvider({ children }) {
     dispatch({ type: ActionTypes.SET_LOADING, payload: true });
     
     try {
-      const results = await api.playerAttack(targetIndex, weaponIndex);
+      const response = await api.playerAttack(targetIndex, weaponIndex);
       
-      // playerAttack puede devolver un array de resultados
-      const resultsArray = Array.isArray(results) ? results : [results];
+      // El backend devuelve: { actions: [...], status: {...} }
+      // actions contiene objetos con type: "PlayerHit", "PlayerMiss", "EnemyDefeated"
+      const actions = response.actions || [response];
+      const status = response.status;
       
-      // Update combat state
-      const combatStatus = await api.getCombatStatus();
-      dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: combatStatus });
+      // Update combat state con el status si viene incluido
+      if (status) {
+        dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: status });
+      } else {
+        // Fallback: pedir el status por separado
+        const combatStatus = await api.getCombatStatus();
+        dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: combatStatus });
+      }
       
-      // Notification for each result
-      resultsArray.forEach(result => {
-        if (result.type === 'player_hit') {
-          addNotification(`¡Golpe! ${result.damage} de daño`, 'success');
-        } else if (result.type === 'player_miss') {
-          addNotification(`¡Fallaste! (${result.roll})`, 'warning');
-        } else if (result.type === 'enemy_defeated') {
-          addNotification(`¡${result.actor} derrotado!`, 'success');
+      // Buscar acciones específicas (soportar snake_case y PascalCase)
+      const hitAction = actions.find(a => a.type === 'player_hit' || a.type === 'PlayerHit');
+      const missAction = actions.find(a => a.type === 'player_miss' || a.type === 'PlayerMiss');
+      const defeatedAction = actions.find(a => a.type === 'enemy_defeated' || a.type === 'EnemyDefeated');
+      const isVictory = status?.state === 'Victory';
+      
+      // Notificaciones para cada acción (soportar ambos formatos)
+      actions.forEach(action => {
+        const actionType = action.type?.toLowerCase();
+        if (actionType === 'player_hit' || actionType === 'playerhit') {
+          addNotification(`¡Golpe! ${action.damage} de daño`, 'success');
+        } else if (actionType === 'player_miss' || actionType === 'playermiss') {
+          addNotification(`¡Fallaste! (${action.roll})`, 'warning');
+        } else if (actionType === 'enemy_defeated' || actionType === 'enemydefeated') {
+          addNotification(`¡Enemigo derrotado!`, 'success');
         }
       });
       
+      if (isVictory) {
+        addNotification('¡Victoria! Todos los enemigos derrotados', 'success');
+      }
+      
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-      return resultsArray[0] || results; // Devolver el primer resultado para compatibilidad
+      
+      // Devolver el resultado completo para que CombatModal lo procese
+      return response;
     } catch (error) {
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
@@ -325,28 +385,37 @@ export function GameProvider({ children }) {
     dispatch({ type: ActionTypes.SET_LOADING, payload: true });
     
     try {
-      const results = await api.enemyTurn();
+      const response = await api.enemyTurn();
       
-      // enemyTurn devuelve un array de resultados
-      const resultsArray = Array.isArray(results) ? results : [results];
+      // El backend devuelve: { actions: [...], status: {...} }
+      const actions = response.actions || (Array.isArray(response) ? response : [response]);
+      const status = response.status;
       
-      // Update combat state
-      const combatStatus = await api.getCombatStatus();
-      dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: combatStatus });
+      // Update combat state con el status si viene incluido
+      if (status) {
+        dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: status });
+      } else {
+        // Fallback: pedir el status por separado
+        const combatStatus = await api.getCombatStatus();
+        dispatch({ type: ActionTypes.UPDATE_COMBAT, payload: combatStatus });
+      }
       
-      // Notifications for each attack
-      resultsArray.forEach(result => {
-        if (result.type === 'enemy_hit') {
-          addNotification(`${result.actor} te golpea por ${result.damage}`, 'error');
-        } else if (result.type === 'enemy_miss') {
-          addNotification(`${result.actor} falla su ataque`, 'info');
-        } else if (result.type === 'player_defeated') {
+      // Notificaciones para cada ataque enemigo (soportar snake_case y PascalCase)
+      actions.forEach(action => {
+        const actionType = action.type?.toLowerCase();
+        if (actionType === 'enemy_hit' || actionType === 'enemyhit') {
+          addNotification(`${action.actor || 'Enemigo'} te golpea por ${action.damage}`, 'error');
+        } else if (actionType === 'enemy_miss' || actionType === 'enemymiss') {
+          addNotification(`${action.actor || 'Enemigo'} falla su ataque`, 'info');
+        } else if (actionType === 'player_defeated' || actionType === 'playerdefeated') {
           addNotification('¡Has sido derrotado!', 'error', 5000);
         }
       });
       
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-      return resultsArray;
+      
+      // Devolver la respuesta completa para que CombatModal la procese
+      return response;
     } catch (error) {
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
@@ -367,12 +436,27 @@ export function GameProvider({ children }) {
         dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: result });
       }
       
-      // Get new entry
-      const entry = await api.getCurrentEntry();
+      // Fetch all updated data after combat
+      const [entry, character, characterSheet] = await Promise.all([
+        api.getCurrentEntry(),
+        api.getCharacter(),
+        api.getCharacterSheet(),
+      ]);
+      
       dispatch({ type: ActionTypes.UPDATE_ENTRY, payload: entry });
+      dispatch({ type: ActionTypes.UPDATE_CHARACTER, payload: character });
+      dispatch({ type: ActionTypes.UPDATE_CHARACTER_SHEET, payload: characterSheet });
+      
+      // Update character reference
+      prevCharacterRef.current = character;
+      
+      // Process effects from combat victory entry if available
+      if (entry.effects) {
+        processEntryEffects(entry.effects, addNotification);
+      }
       
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-      addNotification('Combate terminado', 'info');
+      addNotification('🏆 Combate terminado', 'info');
     } catch (error) {
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
@@ -386,15 +470,40 @@ export function GameProvider({ children }) {
       const result = await api.rollDice(diceType, count, bonus);
       return result;
     } catch (error) {
-      console.error('Dice roll error:', error);
       throw error;
     }
   }, []);
 
-  // Reset game
-  const resetGame = useCallback(() => {
-    dispatch({ type: ActionTypes.RESET_GAME });
-  }, []);
+  // Reset game to initial state
+  const resetGame = useCallback(async () => {
+    dispatch({ type: ActionTypes.SET_LOADING, payload: true });
+    
+    try {
+      await api.resetGame();
+      dispatch({ type: ActionTypes.RESET_GAME });
+      
+      // Reload game after reset
+      await api.loadGame();
+      
+      const [entry, character, characterSheet, gameState] = await Promise.all([
+        api.getCurrentEntry(),
+        api.getCharacter(),
+        api.getCharacterSheet(),
+        api.getGameState(),
+      ]);
+      
+      dispatch({ type: ActionTypes.UPDATE_ENTRY, payload: entry });
+      dispatch({ type: ActionTypes.UPDATE_CHARACTER, payload: character });
+      dispatch({ type: ActionTypes.UPDATE_CHARACTER_SHEET, payload: characterSheet });
+      dispatch({ type: ActionTypes.UPDATE_GAME_STATE, payload: gameState });
+      dispatch({ type: ActionTypes.GAME_LOADED });
+      
+      addNotification('Juego reiniciado', 'success');
+    } catch (error) {
+      dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
+      addNotification(`Error al reiniciar: ${error.message}`, 'error');
+    }
+  }, [addNotification]);
 
   const value = {
     // State

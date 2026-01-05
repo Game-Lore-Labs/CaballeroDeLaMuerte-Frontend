@@ -32,13 +32,12 @@ export {
   HeartIcon,
   SaveIcon,
   LoadIcon,
+  ResetIcon,
   CombatIcon,
   // Equipment Slot Icons
-  HelmetIcon,
   ArmorIcon,
   MainHandIcon,
   OffHandIcon,
-  RingIcon,
   // Item Icons
   LeatherArmorIcon,
   ShortSwordIcon,

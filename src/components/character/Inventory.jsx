@@ -6,11 +6,9 @@ import React, { useState } from 'react';
 import { 
   Panel,
   getItemIcon,
-  HelmetIcon,
   ArmorIcon,
   MainHandIcon,
   OffHandIcon,
-  RingIcon,
   EmptySlotIcon,
   InventoryIcon,
   ScrollIcon,
@@ -152,10 +150,70 @@ const Inventory = ({ inventory = [], equipment = [] }) => {
   const SLOT_COUNT = 24;
   const slots = Array(SLOT_COUNT).fill(null).map((_, i) => inventory[i] || null);
   
+  // Find equipment by slot type
+  const getEquipmentBySlot = (slotKey) => {
+    if (!equipment || equipment.length === 0) return null;
+    
+    switch (slotKey) {
+      case 'armor':
+        // Buscar armadura o ropa (armor, light_armor, medium_armor, heavy_armor)
+        return equipment.find(item => 
+          item.type === 'armor' || 
+          item.type === 'light_armor' || 
+          item.type === 'medium_armor' || 
+          item.type === 'heavy_armor' ||
+          (item.name && item.name.toLowerCase().includes('armadura'))
+        ) || null;
+      
+      case 'mainHand':
+        // Buscar arma principal (weapon, sword, etc.) - primera arma encontrada
+        const weapons = equipment.filter(item => 
+          item.type === 'weapon' || 
+          item.type === 'special_weapon' ||
+          (item.name && (
+            item.name.toLowerCase().includes('espada') ||
+            item.name.toLowerCase().includes('daga') ||
+            item.name.toLowerCase().includes('hacha') ||
+            item.name.toLowerCase().includes('maza') ||
+            item.name.toLowerCase().includes('arco') ||
+            item.name.toLowerCase().includes('ballesta')
+          ))
+        );
+        return weapons[0] || null;
+      
+      case 'offHand':
+        // Buscar segunda arma o escudo
+        const offHandItems = equipment.filter(item => 
+          item.type === 'weapon' || 
+          item.type === 'shield' ||
+          item.type === 'special_weapon'
+        );
+        // Si hay más de un arma, la segunda va en offHand
+        return offHandItems[1] || null;
+      
+      case 'accessory':
+        // Buscar accesorios mágicos (capa, anillo, amuleto, etc.)
+        return equipment.find(item => 
+          item.type === 'wondrous' || 
+          item.type === 'ring' ||
+          item.type === 'amulet' ||
+          item.type === 'cloak' ||
+          (item.name && (
+            item.name.toLowerCase().includes('capa') ||
+            item.name.toLowerCase().includes('anillo') ||
+            item.name.toLowerCase().includes('amuleto')
+          ))
+        ) || null;
+      
+      default:
+        return null;
+    }
+  };
+  
   // Get selected item (from inventory or equipment)
   const getSelectedItem = () => {
-    if (selectedEquipment !== null && equipment[selectedEquipment]) {
-      return equipment[selectedEquipment];
+    if (selectedEquipment !== null) {
+      return getEquipmentBySlot(selectedEquipment);
     }
     if (selectedIndex !== null && slots[selectedIndex]) {
       return slots[selectedIndex];
@@ -172,9 +230,9 @@ const Inventory = ({ inventory = [], equipment = [] }) => {
   };
 
   // Handle equipment slot click
-  const handleEquipmentClick = (index) => {
+  const handleEquipmentClick = (slotKey) => {
     setSelectedIndex(null);
-    setSelectedEquipment(index);
+    setSelectedEquipment(slotKey);
   };
 
   // Equipment slots definition
@@ -182,6 +240,7 @@ const Inventory = ({ inventory = [], equipment = [] }) => {
     { key: 'armor', name: 'Armadura', SlotIcon: ArmorIcon },
     { key: 'mainHand', name: 'Mano Principal', SlotIcon: MainHandIcon },
     { key: 'offHand', name: 'Mano Secundaria', SlotIcon: OffHandIcon },
+    { key: 'accessory', name: 'Accesorio', SlotIcon: ScrollIcon },
   ];
 
   return (
@@ -203,16 +262,19 @@ const Inventory = ({ inventory = [], equipment = [] }) => {
               </div>
             </div>
             <div className="equipment-slots">
-              {equipmentSlots.map((slot, idx) => (
-                <EquipmentSlot
-                  key={slot.key}
-                  item={equipment[idx] || null}
-                  slotName={slot.name}
-                  SlotIcon={slot.SlotIcon}
-                  onClick={() => equipment[idx] && handleEquipmentClick(idx)}
-                  isSelected={selectedEquipment === idx}
-                />
-              ))}
+              {equipmentSlots.map((slot) => {
+                const slotItem = getEquipmentBySlot(slot.key);
+                return (
+                  <EquipmentSlot
+                    key={slot.key}
+                    item={slotItem}
+                    slotName={slot.name}
+                    SlotIcon={slot.SlotIcon}
+                    onClick={() => slotItem && handleEquipmentClick(slot.key)}
+                    isSelected={selectedEquipment === slot.key}
+                  />
+                );
+              })}
             </div>
           </div>
         </Panel>

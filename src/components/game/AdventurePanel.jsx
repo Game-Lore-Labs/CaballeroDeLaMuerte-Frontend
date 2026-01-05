@@ -3,8 +3,16 @@
 // ============================================================================
 
 import React, { useState } from 'react';
-import { Panel, Button, StatBar } from '../ui';
+import { Panel, StatBar } from '../ui';
+import { useGame } from '../../context/GameContext';
+import { ATTRIBUTE_NAMES_ES, SKILL_NAMES_ES } from '../../utils/constants';
 import './AdventurePanel.css';
+
+// Helper to translate attribute/skill names
+const translateName = (name) => {
+  if (!name) return '';
+  return ATTRIBUTE_NAMES_ES[name] || SKILL_NAMES_ES[name] || name;
+};
 
 // Option button component
 const OptionButton = ({ option, onClick, disabled, loading }) => {
@@ -25,6 +33,12 @@ const OptionButton = ({ option, onClick, disabled, loading }) => {
 // Result display component
 const ResultDisplay = ({ result, onDismiss }) => {
   if (!result) return null;
+  
+  // No mostrar overlay para combate - el CombatModal se encarga de eso
+  if (result.type === 'combat_started') return null;
+  
+  // No mostrar para navegación simple
+  if (result.type === 'navigated') return null;
 
   const getResultInfo = (type) => {
     switch (type) {
@@ -36,14 +50,16 @@ const ResultDisplay = ({ result, onDismiss }) => {
         return { icon: '🛡️', title: '¡Salvación!', color: 'success' };
       case 'save_failed':
         return { icon: '💥', title: 'No resististe', color: 'error' };
-      case 'combat_started':
-        return { icon: '⚔️', title: '¡Combate!', color: 'warning' };
       default:
-        return { icon: '→', title: 'Continúa', color: 'info' };
+        return null; // No mostrar para tipos desconocidos
     }
   };
 
   const info = getResultInfo(result.type);
+  
+  // Si no hay info válida, no mostrar nada
+  if (!info) return null;
+  
   const showRoll = result.roll !== null && result.dc !== null;
 
   return (
@@ -59,10 +75,10 @@ const ResultDisplay = ({ result, onDismiss }) => {
           </div>
         )}
         {result.skill && (
-          <span className="result-display__skill">{result.skill}</span>
+          <span className="result-display__skill">{translateName(result.skill)}</span>
         )}
         {result.attribute && (
-          <span className="result-display__skill">{result.attribute}</span>
+          <span className="result-display__skill">{translateName(result.attribute)}</span>
         )}
       </div>
       <span className="result-display__dismiss">Click para continuar</span>
@@ -78,17 +94,25 @@ const AdventurePanel = ({
   onSelectOption, 
   loading = false,
   lastResult = null,
+  onResetGame,
 }) => {
-  const [showResult, setShowResult] = useState(!!lastResult);
+  const [showResult, setShowResult] = useState(false);
+  const { characterSheet, character: contextCharacter } = useGame();
 
+  // Tipos de resultado que queremos mostrar con overlay
   React.useEffect(() => {
-    if (lastResult) {
+    const showableResultTypes = ['check_passed', 'check_failed', 'save_passed', 'save_failed'];
+    // Solo mostrar el overlay para tipos específicos de resultado
+    if (lastResult && showableResultTypes.includes(lastResult.type)) {
       setShowResult(true);
+    } else {
+      setShowResult(false);
     }
   }, [lastResult]);
 
   const handleOptionClick = async (optionId) => {
     if (loading) return;
+    setShowResult(false); // Ocultar resultado anterior inmediatamente
     await onSelectOption(optionId);
   };
 
@@ -112,7 +136,7 @@ const AdventurePanel = ({
                 <span>🦹</span>
               </div>
               <div className="status-mini__info">
-                <span className="status-mini__name">Iksa Pen</span>
+                <span className="status-mini__name">{contextCharacter?.name || characterSheet?.basicInfo?.name || 'Aventurero'}</span>
                 <StatBar
                   current={character.currentHP}
                   max={character.maxHP}
@@ -164,6 +188,16 @@ const AdventurePanel = ({
           {options.length === 0 ? (
             <div className="options-empty">
               <span>No hay opciones disponibles</span>
+              {onResetGame && (
+                <button 
+                  className="reset-game-button"
+                  onClick={onResetGame}
+                  disabled={loading}
+                >
+                  <span className="reset-game-button__icon">🔄</span>
+                  <span className="reset-game-button__text">Reiniciar Aventura</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="options-list">

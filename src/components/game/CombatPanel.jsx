@@ -8,8 +8,6 @@ import './CombatPanel.css';
 
 // Enemy card component
 const EnemyCard = ({ enemy, index, isTargeted, onTarget, isDefeated }) => {
-  const hpPercentage = (enemy.currentHP / enemy.maxHP) * 100;
-  
   return (
     <div 
       className={`enemy-card ${isTargeted ? 'enemy-card--targeted' : ''} ${isDefeated ? 'enemy-card--defeated' : ''}`}

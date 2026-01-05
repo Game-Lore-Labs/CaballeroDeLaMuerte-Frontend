@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { MainLayout } from '../components/layout';
 import { NotificationContainer } from '../components/ui';
-import { AdventurePanel, CombatPanel } from '../components/game';
+import { AdventurePanel, CombatModal } from '../components/game';
 import { CharacterSheet, Inventory, CluesPanel, HistoryPanel } from '../components/character';
 import './GamePage.css';
 
@@ -59,6 +59,7 @@ const ErrorDisplay = ({ error, onRetry }) => {
 const GamePage = () => {
   const [activeTab, setActiveTab] = useState('adventure');
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   
   const {
     isLoaded,
@@ -76,12 +77,12 @@ const GamePage = () => {
     notifications,
     loadGame,
     saveGame,
+    resetGame,
     selectOption,
     attack,
     processEnemyTurn,
     finishCombat,
     removeNotification,
-    clearError,
   } = useGame();
 
   // Handle game load
@@ -89,7 +90,6 @@ const GamePage = () => {
     try {
       await loadGame();
     } catch (err) {
-      console.error('Error loading game:', err);
     }
   };
 
@@ -103,6 +103,24 @@ const GamePage = () => {
     }
   };
 
+  // Handle reset game (with confirmation for navbar button)
+  const handleResetGame = async () => {
+    if (window.confirm('¿Estás seguro de que quieres reiniciar el juego? Se perderá todo el progreso.')) {
+      await doResetGame();
+    }
+  };
+
+  // Actual reset game logic (no confirmation needed for game over)
+  const doResetGame = async () => {
+    setResetting(true);
+    try {
+      await resetGame();
+      setActiveTab('adventure');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   // Handle option selection
   const handleSelectOption = async (optionId) => {
     try {
@@ -113,25 +131,26 @@ const GamePage = () => {
         setActiveTab('adventure'); // Stay on adventure but show combat
       }
     } catch (err) {
-      console.error('Error selecting option:', err);
     }
   };
 
   // Handle combat attack
-  const handleAttack = async (targetIndex) => {
+  const handleAttack = async (targetIndex, weaponIndex = 0) => {
     try {
-      const result = await attack(targetIndex);
-      
-      // Process enemy turn after player attack (if not combat over)
-      if (result.type !== 'enemy_defeated' && combatState?.state === 'InProgress') {
-        setTimeout(async () => {
-          await processEnemyTurn();
-        }, 500);
-      }
-      
+      const result = await attack(targetIndex, weaponIndex);
+      // El turno enemigo ahora se maneja dentro del CombatModal
       return result;
     } catch (err) {
-      console.error('Error attacking:', err);
+      throw err;
+    }
+  };
+
+  // Handle enemy turn (called from CombatModal)
+  const handleEnemyTurn = async () => {
+    try {
+      const result = await processEnemyTurn();
+      return result;
+    } catch (err) {
       throw err;
     }
   };
@@ -141,24 +160,12 @@ const GamePage = () => {
     try {
       await finishCombat();
     } catch (err) {
-      console.error('Error ending combat:', err);
     }
   };
 
   // Render tab content
   const renderTabContent = () => {
-    // If in combat, always show combat panel
-    if (inCombat) {
-      return (
-        <CombatPanel
-          combatState={combatState}
-          onAttack={handleAttack}
-          onEndCombat={handleEndCombat}
-          loading={isLoading}
-        />
-      );
-    }
-
+    // Combat is now handled by modal overlay, so we always render normal content
     switch (activeTab) {
       case 'adventure':
         return (
@@ -169,11 +176,12 @@ const GamePage = () => {
             onSelectOption={handleSelectOption}
             loading={isLoading}
             lastResult={lastResult}
+            onResetGame={doResetGame}
           />
         );
       
       case 'character':
-        return <CharacterSheet characterSheet={characterSheet} />;
+        return <CharacterSheet characterSheet={characterSheet} character={character} />;
       
       case 'inventory':
         return (
@@ -228,15 +236,27 @@ const GamePage = () => {
   return (
     <>
       <MainLayout
-        activeTab={inCombat ? 'adventure' : activeTab}
+        activeTab={activeTab}
         onTabChange={setActiveTab}
         character={character}
         onSave={handleSaveGame}
         onLoad={handleStartGame}
+        onReset={handleResetGame}
         saving={saving}
+        resetting={resetting}
       >
         {renderTabContent()}
       </MainLayout>
+      
+      {/* Combat Modal - Arena de Combate */}
+      <CombatModal
+        isOpen={inCombat}
+        combatState={combatState}
+        onAttack={handleAttack}
+        onEnemyTurn={handleEnemyTurn}
+        onEndCombat={handleEndCombat}
+        loading={isLoading}
+      />
       
       <NotificationContainer 
         notifications={notifications} 

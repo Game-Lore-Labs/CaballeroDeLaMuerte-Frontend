@@ -6,39 +6,29 @@ import React, { useState } from 'react';
 import { Panel } from '../ui';
 import './CluesPanel.css';
 
-// Individual clue card
-const ClueCard = ({ clueId, isExpanded, onClick }) => {
-  // Generate a fake clue name and description from the ID
-  // In a real app, this would come from a clue database
-  const formatClueName = (id) => {
-    return id
-      .replace(/_/g, ' ')
-      .replace(/([A-Z])/g, ' $1')
-      .toLowerCase()
-      .replace(/\b\w/g, c => c.toUpperCase());
+// Get icon based on clue type
+const getClueIcon = (type) => {
+  const icons = {
+    information: '📋',
+    scroll: '📜',
+    location: '🗺️',
+    person: '👤',
+    item: '🔑',
+    warning: '⚠️',
+    secret: '🔐',
   };
+  return icons[type] || '🔍';
+};
 
-  const getClueDescription = (id) => {
-    // Mock descriptions based on ID patterns
-    const descriptions = {
-      'secret': 'Has descubierto un secreto oculto que podría ser útil más adelante.',
-      'passage': 'Un pasaje secreto que conecta con otra área.',
-      'trap': 'Información sobre una trampa que debes evitar.',
-      'enemy': 'Detalles sobre los enemigos que enfrentarás.',
-      'treasure': 'Pistas sobre un tesoro escondido.',
-      'key': 'Una pista sobre cómo abrir algo cerrado.',
-    };
-
-    const lowerCaseId = id.toLowerCase();
-    for (const [key, desc] of Object.entries(descriptions)) {
-      if (lowerCaseId.includes(key)) return desc;
-    }
-    
-    return 'Una pista misteriosa que has descubierto durante tu aventura.';
-  };
-
-  const clueName = formatClueName(clueId);
-  const clueDesc = getClueDescription(clueId);
+// Individual clue card - now handles both string IDs and object format
+const ClueCard = ({ clue, isExpanded, onClick }) => {
+  // Handle both formats: string (old) and object (new)
+  const isObject = typeof clue === 'object';
+  const clueName = isObject ? clue.name : formatClueName(clue);
+  const clueType = isObject ? clue.type : 'information';
+  const clueDesc = isObject ? (clue.description || getDefaultDescription(clue.name)) : getClueDescription(clue);
+  const clueId = isObject ? (clue.id || clue.name) : clue;
+  const icon = getClueIcon(clueType);
 
   return (
     <div 
@@ -46,7 +36,7 @@ const ClueCard = ({ clueId, isExpanded, onClick }) => {
       onClick={onClick}
     >
       <div className="clue-card__header">
-        <span className="clue-card__icon">🔍</span>
+        <span className="clue-card__icon">{icon}</span>
         <h4 className="clue-card__title">{clueName}</h4>
         <span className="clue-card__toggle">{isExpanded ? '▼' : '▶'}</span>
       </div>
@@ -54,7 +44,9 @@ const ClueCard = ({ clueId, isExpanded, onClick }) => {
       {isExpanded && (
         <div className="clue-card__body">
           <p className="clue-card__description">{clueDesc}</p>
-          <span className="clue-card__id">Ref: {clueId}</span>
+          <div className="clue-card__meta">
+            <span className="clue-card__type">{formatType(clueType)}</span>
+          </div>
         </div>
       )}
       
@@ -66,12 +58,79 @@ const ClueCard = ({ clueId, isExpanded, onClick }) => {
   );
 };
 
+// Format clue name from ID
+const formatClueName = (id) => {
+  return id
+    .replace(/_/g, ' ')
+    .replace(/([A-Z])/g, ' $1')
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase());
+};
+
+// Format type for display
+const formatType = (type) => {
+  const types = {
+    information: 'Información',
+    scroll: 'Pergamino',
+    location: 'Ubicación',
+    person: 'Persona',
+    item: 'Objeto',
+    warning: 'Advertencia',
+    secret: 'Secreto',
+  };
+  return types[type] || 'Pista';
+};
+
+// Get default description based on name
+const getDefaultDescription = (name) => {
+  const lowerName = name.toLowerCase();
+  
+  if (lowerName.includes('árbol rojo')) {
+    return 'Información crucial sobre el Árbol Rojo y su conexión con el Caballero de la Muerte.';
+  }
+  if (lowerName.includes('caballero')) {
+    return 'Datos importantes sobre el Caballero de la Muerte y cómo derrotarlo.';
+  }
+  if (lowerName.includes('kiaransalee')) {
+    return 'Información sobre la misteriosa Orden de Kiaransalee.';
+  }
+  
+  return 'Una pista importante que has descubierto durante tu aventura.';
+};
+
+// Get description from ID (legacy support)
+const getClueDescription = (id) => {
+  const descriptions = {
+    'secret': 'Has descubierto un secreto oculto que podría ser útil más adelante.',
+    'passage': 'Un pasaje secreto que conecta con otra área.',
+    'trap': 'Información sobre una trampa que debes evitar.',
+    'enemy': 'Detalles sobre los enemigos que enfrentarás.',
+    'treasure': 'Pistas sobre un tesoro escondido.',
+    'key': 'Una pista sobre cómo abrir algo cerrado.',
+  };
+
+  const lowerCaseId = id.toLowerCase();
+  for (const [key, desc] of Object.entries(descriptions)) {
+    if (lowerCaseId.includes(key)) return desc;
+  }
+  
+  return 'Una pista misteriosa que has descubierto durante tu aventura.';
+};
+
 // Main CluesPanel component
 const CluesPanel = ({ clues = [] }) => {
   const [expandedClue, setExpandedClue] = useState(null);
 
-  const toggleClue = (clueId) => {
-    setExpandedClue(expandedClue === clueId ? null : clueId);
+  const toggleClue = (clueKey) => {
+    setExpandedClue(expandedClue === clueKey ? null : clueKey);
+  };
+
+  // Get unique key for clue (handles both formats)
+  const getClueKey = (clue, index) => {
+    if (typeof clue === 'object') {
+      return clue.id || clue.name || index;
+    }
+    return clue;
   };
 
   return (
@@ -112,14 +171,17 @@ const CluesPanel = ({ clues = [] }) => {
           </div>
         ) : (
           <div className="clues-panel__list">
-            {clues.map((clueId) => (
-              <ClueCard
-                key={clueId}
-                clueId={clueId}
-                isExpanded={expandedClue === clueId}
-                onClick={() => toggleClue(clueId)}
-              />
-            ))}
+            {clues.map((clue, index) => {
+              const key = getClueKey(clue, index);
+              return (
+                <ClueCard
+                  key={key}
+                  clue={clue}
+                  isExpanded={expandedClue === key}
+                  onClick={() => toggleClue(key)}
+                />
+              );
+            })}
           </div>
         )}
 

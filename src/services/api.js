@@ -35,7 +35,6 @@ async function apiRequest(endpoint, options = {}) {
 
     return data.payload;
   } catch (error) {
-    console.error(`API Error [${endpoint}]:`, error);
     throw error;
   }
 }
@@ -63,6 +62,13 @@ export async function loadGame() {
  */
 export async function saveGame() {
   return apiRequest('/game/save', { method: 'POST' });
+}
+
+/**
+ * Reset game to initial state
+ */
+export async function resetGame() {
+  return apiRequest('/game/reset', { method: 'POST' });
 }
 
 /**
@@ -299,6 +305,7 @@ const api = {
   healthCheck,
   loadGame,
   saveGame,
+  resetGame,
   getGameState,
   getCurrentEntry,
   selectOption,
